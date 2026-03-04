@@ -1,1 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reserve Master - 2026</title>
+    <style>
+        :root {
+            --x-green: #22c55e; --r-yellow: #fde047; --a-gray: #94a3b8; 
+            --c-purple: #a855f7; --cq-orange: #f97316; --w-white: #ffffff;
+            --error: #ef4444; --bg: #f1f5f9; --r-blue: #2563eb;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); padding: 15px; color: #1e293b; user-select: none; margin: 0; }
+        .layout { display: flex; gap: 20px; align-items: flex-start; }
+        .calendars-container { display: flex; gap: 15px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 10px; align-items: stretch; }
+        .sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 15px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 16px; border: 1px solid #e2e8f0; }
+        
+        .calendar-card { width: 330px; flex-shrink: 0; transition: all 0.3s ease; display: flex; }
+        .calendar-card .card { flex: 1; display: flex; flex-direction: column; min-height: 380px; }
+        .calendar-card.side-month { opacity: 0.5; transform: scale(0.95); cursor: pointer; }
+        
+        .palette { display: flex; gap: 6px; background: #f8fafc; padding: 8px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; justify-content: center; }
+        .brush { width: 38px; height: 36px; border-radius: 8px; border: 3px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; }
+        .brush.active { border-color: #0f172a; transform: scale(1.1); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 40px); gap: 4px; justify-content: center; }
+        .weekday { text-align: center; font-weight: 800; font-size: 0.65rem; color: #64748b; padding-bottom: 5px; }
+        .day { width: 40px; height: 40px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: crosshair; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .day-num { position: absolute; top: 2px; left: 3px; font-size: 8px; font-weight: 700; opacity: 0.8; }
+        .day-code { font-weight: 900; font-size: 13px; }
+        
+        .day.X, .brush.X { background: var(--x-green); color: white; }
+        .day.R, .brush.R { background: var(--r-yellow); color: #854d0e; }
+        .day.A, .brush.A { background: var(--a-gray); color: white; }
+        .day.C, .brush.C { background: var(--c-purple); color: white; }
+        .day.CQ, .brush.CQ { background: var(--cq-orange); color: white; }
+        .day.CI, .brush.CI { background: #334155; color: white; }
+        
+        .day.illegal { outline: 4px solid var(--error); outline-offset: -4px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; align-items: center; }
+        .alert { padding: 8px; border-radius: 6px; border-left: 4px solid var(--error); background: #fef2f2; color: var(--error); font-size: 0.75rem; margin-bottom: 6px; font-weight: 600; }
+        .success { padding: 10px; border-radius: 8px; background: #f0fdf4; color: #166534; font-weight: 800; text-align: center; border: 1px solid #bbf7d0; }
+        .date-range-sub { text-align: center; font-size: 0.65rem; color: #94a3b8; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 0.8rem; font-weight: 600; margin-top: 5px; }
+        .btn:hover { background: #f8fafc; border-color: #94a3b8; }
 
+        .instructions { margin-top: 25px; max-width: 1030px; line-height: 1.6; }
+        .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; }
+        .legend-item { margin-bottom: 8px; }
+        .legend-item b { color: #0f172a; }
+        .notes-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 0.85rem; }
+    </style>
+</head>
+<body onmousedown="isDrawing = true" onmouseup="isDrawing = false">
+
+<div class="layout">
+    <div class="sidebar">
+        <div class="card">
+            <h3 style="font-size: 0.7rem; color: #94a3b8; text-align:left; margin:0;">PRIMARY BID PERIOD</h3>
+            <select id="month-selector" onchange="changeFocusMonth(this.value)" style="width:100%; margin-bottom:10px;"></select>
+            <div class="stat-row">
+                <span>Reserve Guarantee:</span>
+                <select id="alv-cat" onchange="validateAll()">
+                    <option value="cat1" selected>72-74.9</option>
+                    <option value="cat2">75-80</option>
+                </select>
+            </div>
+            <div class="stat-row"><span>Min Work Block:</span><input type="number" id="cfg-min-w" value="5" onchange="validateAll()" style="width:40px;"></div>
+            <div class="stat-row"><span>Max Work Block:</span><input type="number" id="cfg-max-w" value="99" onchange="validateAll()" style="width:40px;"></div>
+            <div class="stat-row"><span>Max X Blocks:</span><input type="number" id="cfg-max-x-blks" value="4" onchange="validateAll()" style="width:40px;"></div>
+            <div style="margin-top:10px; font-size: 0.85rem;">
+                <input type="checkbox" id="extra-x" onchange="validateAll()" checked> <label for="extra-x">Extra X Day</label>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat-row"><span>Avail Days:</span> <b id="stat-avail">0</b></div>
+            <div class="stat-row"><span>X Used/Req:</span> <span><b id="stat-x-used">0</b> / <b id="stat-x-req">0</b></span></div>
+            <div class="stat-row"><span>X Blocks:</span> <b id="stat-x-blks">0</b></div>
+        </div>
+        <div id="alerts"></div>
+        <div class="card">
+            <button class="btn" onclick="exportData()">💾 Export Patterns</button>
+            <button class="btn" onclick="document.getElementById('importFile').click()">📂 Import Patterns</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        <div class="palette" id="palette">
+            <div class="brush R active" onclick="setBrush('R')">R</div>
+            <div class="brush X" onclick="setBrush('X')">X</div>
+            <div class="brush A" onclick="setBrush('A')">A</div>
+            <div class="brush C" onclick="setBrush('C')">C</div>
+            <div class="brush CQ" onclick="setBrush('CQ')">CQ</div>
+            <div class="brush CI" onclick="setBrush('CI')">CI</div>
+        </div>
+        
+        <div class="calendars-container">
+            <div id="prev-container" class="calendar-card side-month" onclick="changeFocusMonth(currentIdx - 1)"></div>
+            <div id="curr-container" class="calendar-card"></div>
+            <div id="next-container" class="calendar-card side-month" onclick="changeFocusMonth(currentIdx + 1)"></div>
+        </div>
+
+        <div class="card instructions">
+            <h3 style="margin-top:0">Legend</h3>
+            <div class="legend-grid">
+                <div>
+                    <div class="legend-item"><b>X:</b> X-day Absence (non-working). Example: Vacation, leave, etc.</div>
+                    <div class="legend-item"><b>A:</b> Absence (General). This causes X day proration.</div>
+                    <div class="legend-item"><b>CQ:</b> CQ (Does not count against X days)</div>
+                </div>
+                <div>
+                    <div class="legend-item"><b>CI:</b> Carry In trip. It is work, but it does not cause X day proration. It works like an R day.</div>
+                    <div class="legend-item"><b>R:</b> Reserve on call day</div>
+                    <div class="legend-item"><b>C:</b> Coverage date. Behaves like an R day (marker for fixed results).</div>
+                </div>
+            </div>
+            
+            <div class="notes-section">
+                <h3 style="margin-top:0">Notes</h3>
+                <ol>
+                    <li>Pre-awarded Work (CI) can be left orphaned. However, if PBS puts a reserve day on either side, then the work block rule applies.</li>
+                    <li>Reserve or other work at the end of the previous month may be orphaned. However, if PBS puts a reserve day next to it in the current month, then the work block rule applies.</li>
+                    <li>The minimum work block rule does not apply to work blocks (including reserve) touching the end of the current month.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BID_MONTHS = [
+        { name: "January",   start: new Date(2026, 0, 1),  end: new Date(2026, 0, 30) },
+        { name: "February",  start: new Date(2026, 0, 31), end: new Date(2026, 2, 1)  },
+        { name: "March",     start: new Date(2026, 2, 2),  end: new Date(2026, 2, 31) },
+        { name: "April",     start: new Date(2026, 3, 1),  end: new Date(2026, 4, 1)  },
+        { name: "May",       start: new Date(2026, 4, 2),  end: new Date(2026, 5, 1)  },
+        { name: "June",      start: new Date(2026, 5, 2),  end: new Date(2026, 6, 1)  },
+        { name: "July",      start: new Date(2026, 6, 2),  end: new Date(2026, 6, 31) },
+        { name: "August",    start: new Date(2026, 7, 1),  end: new Date(2026, 7, 30) },
+        { name: "September", start: new Date(2026, 7, 31), end: new Date(2026, 8, 30) },
+        { name: "October",   start: new Date(2026, 9, 1),  end: new Date(2026, 9, 31) },
+        { name: "November",  start: new Date(2026, 10, 1), end: new Date(2026, 10, 30)},
+        { name: "December",  start: new Date(2026, 11, 1), end: new Date(2026, 11, 31)}
+    ];
+
+    const PRORATION = { 30: {cat1:13, cat2:12}, 31: {cat1:14, cat2:13} };
+    const STORE_KEY = "rm_v13_data";
+    let currentIdx = 2, activeBrush = 'R', isDrawing = false, illegalIndices = new Set(), monthData = {};
+
+    function init() {
+        const sel = document.getElementById('month-selector');
+        const today = new Date();
+        const saved = localStorage.getItem(STORE_KEY);
+        const globalData = saved ? JSON.parse(saved) : {};
+
+        BID_MONTHS.forEach((m, i) => {
+            const opt = document.createElement('option');
+            opt.value = i; opt.innerText = m.name;
+            sel.appendChild(opt);
+            const diff = Math.ceil(Math.abs(m.end - m.start) / (1000 * 60 * 60 * 24)) + 1;
+            m.dayCount = diff;
+            monthData[i] = globalData[i] || { days: Array(diff).fill('R'), settings: { minW:5, maxW:99, maxX:4, alv:'cat1', extraX:true } };
+            if (today >= m.start && today <= m.end) currentIdx = i;
+        });
+        changeFocusMonth(currentIdx);
+    }
+
+    function save() { localStorage.setItem(STORE_KEY, JSON.stringify(monthData)); }
+    function setBrush(b) { activeBrush = b; document.querySelectorAll('.brush').forEach(el => el.classList.remove('active')); document.querySelector(`.brush.${b}`).classList.add('active'); }
+
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(monthData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "reserve_patterns_2026.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importData(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            monthData = JSON.parse(e.target.result);
+            save();
+            changeFocusMonth(currentIdx);
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function changeFocusMonth(idx) {
+        if (idx < 0 || idx >= BID_MONTHS.length) return;
+        currentIdx = parseInt(idx);
+        document.getElementById('month-selector').value = currentIdx;
+        const s = monthData[currentIdx].settings;
+        document.getElementById('cfg-min-w').value = s.minW;
+        document.getElementById('cfg-max-w').value = s.maxW;
+        document.getElementById('cfg-max-x-blks').value = s.maxX;
+        document.getElementById('alv-cat').value = s.alv;
+        document.getElementById('extra-x').checked = s.extraX;
+        validateAll();
+    }
+
+    function updateDay(mIdx, dIdx) {
+        monthData[mIdx].days[dIdx] = activeBrush;
+        save();
+        validateAll();
+    }
+
+    function validateAll() {
+        const s = monthData[currentIdx].settings;
+        s.minW = parseInt(document.getElementById('cfg-min-w').value);
+        s.maxW = parseInt(document.getElementById('cfg-max-w').value);
+        s.maxX = parseInt(document.getElementById('cfg-max-x-blks').value);
+        s.alv = document.getElementById('alv-cat').value;
+        s.extraX = document.getElementById('extra-x').checked;
+        illegalIndices.clear();
+        const alerts = [];
+        const m = BID_MONTHS[currentIdx];
+        const currDays = monthData[currentIdx].days;
+
+        let xBlks = 0, inX = false;
+        currDays.forEach(day => { if(day==='X'){ if(!inX) {xBlks++; inX=true;} } else inX=false; });
+        document.getElementById('stat-x-blks').innerText = xBlks;
+        if(xBlks > s.maxX) alerts.push(`Exceeds Max X Blocks (${xBlks})`);
+
+        const avail = currDays.filter(d => d !== 'A').length;
+        const xUsed = currDays.filter(d => d === 'X').length;
+        const xBase = PRORATION[m.dayCount >= 31 ? 31 : 30][s.alv] + (s.extraX ? 1 : 0);
+        const xReq = avail < m.dayCount ? Math.ceil(avail * (xBase / m.dayCount)) : xBase;
+
+        document.getElementById('stat-avail').innerText = avail;
+        document.getElementById('stat-x-used').innerText = xUsed;
+        document.getElementById('stat-x-req').innerText = xReq;
+        if(xUsed !== xReq) alerts.push(xUsed < xReq ? `Need ${xReq-xUsed} more X-days` : `Too many X-days`);
+
+        const pIdx = currentIdx > 0 ? currentIdx - 1 : null;
+        const pDays = pIdx !== null ? monthData[pIdx].days : [];
+        const combo = [...pDays, ...currDays];
+        const offset = pDays.length;
+
+        let block = [];
+        combo.forEach((code, i) => {
+            if(['R','C','CQ','CI'].includes(code)) {
+                block.push(i);
+            } else {
+                checkWorkBlock(block, offset, currDays.length, combo, alerts);
+                block = [];
+            }
+        });
+        checkWorkBlock(block, offset, currDays.length, combo, alerts);
+
+        document.getElementById('alerts').innerHTML = alerts.length ? [...new Set(alerts)].map(a => `<div class="alert">⚠️ ${a}</div>`).join('') : `<div class="success">✓ LEGAL</div>`;
+        render();
+    }
+
+    function checkWorkBlock(indices, offset, currLen, combo, alerts) {
+        if (indices.length === 0) return;
+        const hasRes = indices.some(idx => ['R', 'C', 'CQ'].includes(combo[idx]));
+        if (!hasRes) return;
+        const s = monthData[currentIdx].settings;
+        const lastDayIdx = offset + currLen - 1;
+        const endsOnLastDay = indices.includes(lastDayIdx);
+
+        if (indices.length < s.minW && !endsOnLastDay) {
+            indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
+            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Short Work Block (${indices.length})`);
+        }
+        if (indices.length > s.maxW) {
+            indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
+            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Work Block exceeds ${s.maxW}`);
+        }
+    }
+
+    function renderMonth(idx, containerId, isSide) {
+        const container = document.getElementById(containerId);
+        if (idx < 0 || idx >= BID_MONTHS.length) { container.innerHTML = ""; return; }
+        const m = BID_MONTHS[idx];
+        const range = `${m.start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} - ${m.end.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+        container.innerHTML = `<div class="card"><h3>${m.name}</h3><div class="date-range-sub">${range}</div><div class="calendar-grid"></div></div>`;
+        const grid = container.querySelector('.calendar-grid');
+        ['S','M','T','W','T','F','S'].forEach(d => { const el=document.createElement('div'); el.className='weekday'; el.innerText=d; grid.appendChild(el); });
+        for(let i=0; i<m.start.getDay(); i++) grid.appendChild(document.createElement('div'));
+        monthData[idx].days.forEach((code, dIdx) => {
+            const d = document.createElement('div');
+            const date = new Date(m.start); date.setDate(m.start.getDate() + dIdx);
+            d.className = `day ${code} ${(!isSide && illegalIndices.has(dIdx))?'illegal':''}`;
+            d.innerHTML = `<span class="day-num">${date.getDate()}</span><span class="day-code">${code}</span>`;
+            d.onmousedown = () => updateDay(idx, dIdx);
+            d.onmouseenter = () => { if(isDrawing) updateDay(idx, dIdx); };
+            grid.appendChild(d);
+        });
+    }
+
+    function render() {
+        renderMonth(currentIdx - 1, 'prev-container', true);
+        renderMonth(currentIdx, 'curr-container', false);
+        renderMonth(currentIdx + 1, 'next-container', true);
+    }
+
+    init();
+</script>
+</body>
+</html>
