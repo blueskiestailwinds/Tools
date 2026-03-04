@@ -18,6 +18,32 @@
             --text-muted: #94a3b8;
         }
 
+        h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+            text-transform: uppercase; /* Optional: gives it a "Header" feel */
+        }
+
+        .num-input {
+            width: 40px;
+            text-align: center;
+        }
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Specific styling for the small sidebar headers */
+        .sidebar h3 {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); padding: 20px; color: var(--text-main); margin: 0; }
         .layout { display: flex; gap: 30px; align-items: flex-start; max-width: 1600px; margin: 0 auto; }
         .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
@@ -210,7 +236,7 @@
 <div class="layout">
     <div class="sidebar">
         <div class="card">
-            <h3 style="font-size: 0.7rem; color: #94a3b8; margin:0;">CONTRACT BID PERIOD</h3>
+            <h3>Bid Period</h3>
             <select id="month-selector" onchange="changeFocusMonth(this.value)" style="width:100%; margin-top:10px;"></select>
             <div class="stat-row">
                 <span>Guarantee:</span>
@@ -219,9 +245,9 @@
                     <option value="cat2">75:00 - 80:00</option>
                 </select>
             </div>
-            <div class="stat-row"><span>Min Work:</span><input type="number" id="cfg-min-w" value="5" onchange="validateAll()" style="width:40px;"></div>
-            <div class="stat-row"><span>Max Work:</span><input type="number" id="cfg-max-w" value="99" onchange="validateAll()" style="width:40px;"></div>
-            <div class="stat-row"><span>Max X Blks:</span><input type="number" id="cfg-max-x-blks" value="4" onchange="validateAll()" style="width:40px;"></div>
+            <div class="stat-row"><span>Min Work:</span><input type="number" id="cfg-min-w" class="num-input" value="5" onchange="validateAll()"></div>
+            <div class="stat-row"><span>Max Work:</span><input type="number" id="cfg-max-w" class="num-input" value="5" onchange="validateAll()"></div>
+            <div class="stat-row"><span>Max X Blks:</span><input type="number" id="cfg-max-x-blks" class="num-input" value="5" onchange="validateAll()"></div>
             <div style="margin-top:10px; font-size: 0.85rem;">
                 <input type="checkbox" id="extra-x" onchange="validateAll()"> <label for="extra-x">Extra X Day</label>
             </div>
@@ -238,8 +264,8 @@
             <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
         </div>
         <div class="card">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.5px;">SYSTEM MODE</span>
+            <div class="flex-between">
+                <h3>Mode</h3>
                 <div class="mode-toggle">
                     <input type="checkbox" id="mode-switch" onchange="handleModeChange()">
                     <label for="mode-switch">
@@ -269,7 +295,7 @@
         </div>
 
         <div class="card">
-            <h3 style="margin-top:0">Legend & Notes</h3>
+            <h3>Legend & Notes</h3>
             <div class="legend-grid">
                 <div>
                     <div><b>X:</b> X-day</div>
