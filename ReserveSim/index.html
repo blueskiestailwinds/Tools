@@ -223,6 +223,7 @@
 
     function updateDay(mIdx, dIdx, event) {
         if (event.type === 'mouseenter' && event.buttons !== 1) return;
+        if (event.type === 'mousedown' && event.button !== 0) return;
         monthData[mIdx].days[dIdx] = activeBrush;
         save();
         validateAll();
