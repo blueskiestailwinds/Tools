@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reserve Master - Rolling Contract Edition</title>
+    <title>Reserve Master - Pro Edition</title>
     <style>
         :root {
             --x-green: #15803d; 
@@ -18,143 +18,32 @@
             --text-muted: #94a3b8;
         }
 
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background: var(--bg); 
-            padding: 20px; 
-            color: var(--text-main); 
-            margin: 0; 
-            line-height: 1.5;
-        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); padding: 20px; color: var(--text-main); margin: 0; }
+        .layout { display: flex; gap: 30px; align-items: flex-start; max-width: 1600px; margin: 0 auto; }
+        .sidebar { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
+        .main-workspace { flex-grow: 1; min-width: 0; }
+        .calendars-container { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
 
-        .layout { 
-            display: flex; 
-            gap: 30px; 
-            align-items: flex-start; 
-            max-width: 1600px; 
-            margin: 0 auto;
-        }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); margin-bottom: 15px; }
+        .calendar-card { width: 385px; flex-shrink: 0; }
+        .calendar-card.side-month { opacity: 0.4; transform: scale(0.95); cursor: pointer; }
 
-        .sidebar { 
-            width: 300px; 
-            flex-shrink: 0; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            position: sticky; 
-            top: 20px; 
-        }
-
-        .main-workspace {
-            flex-grow: 1;
-            min-width: 0;
-        }
-
-        .calendars-container { 
-            display: flex; 
-            gap: 20px; 
-            overflow-x: auto; 
-            padding-bottom: 20px; 
-            align-items: stretch;
-        }
-
-        .card { 
-            background: var(--card-bg); 
-            border-radius: 12px; 
-            padding: 20px; 
-            border: 1px solid var(--border); 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        }
-
-        .calendar-card { 
-            width: 380px; 
-            flex-shrink: 0; 
-        }
-
-        .calendar-card.side-month { 
-            opacity: 0.4; 
-            transform: scale(0.95); 
-            cursor: pointer;
-        }
-
-        .palette { 
-            display: flex; 
-            gap: 10px; 
-            background: var(--card-bg); 
-            padding: 12px; 
-            border-radius: 12px; 
-            border: 1px solid var(--border); 
-            margin-bottom: 20px; 
-            justify-content: center; 
-        }
-
-        .brush { 
-            width: 44px; 
-            height: 44px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 900; 
-            border: 2px solid transparent;
-        }
-
+        .palette { display: flex; gap: 10px; background: var(--card-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; justify-content: center; }
+        .brush { width: 44px; height: 44px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid transparent; }
         .brush.active { border-color: #fff; transform: translateY(-2px); }
 
-        .calendar-grid { 
-            display: grid; 
-            grid-template-columns: repeat(7, 44px); /* Fixed width prevents scrunching */
-            gap: 6px; 
-            justify-content: center;
-        }
-
-        .weekday {
-            text-align: center;
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: var(--text-muted);
-            padding-bottom: 5px;
-        }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 44px); gap: 6px; justify-content: center; }
+        .weekday { text-align: center; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); padding-bottom: 5px; }
 
         .day { 
-            width: 44px; 
-            height: 52px; 
-            border: 1px solid var(--border); 
-            background: #18191a;
-            border-radius: 6px; 
-            cursor: crosshair; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            position: relative; 
-            box-sizing: border-box;
-            transition: background 0.2s;
+            width: 44px; height: 52px; border: 1px solid var(--border); background: #18191a;
+            border-radius: 6px; cursor: crosshair; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative; box-sizing: border-box;
         }
+        .day-num { font-size: 11px; font-weight: 700; color: var(--text-muted); line-height: 1; margin-bottom: 2px; }
+        .day-code { font-weight: 900; font-size: 19px; line-height: 1; letter-spacing: -1px; }
+        .day.illegal { border: 2px solid var(--error) !important; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.4); z-index: 1; }
 
-        .day-num { 
-            font-size: 11px; 
-            font-weight: 700; 
-            color: var(--text-muted); 
-            line-height: 1; 
-            margin-bottom: 2px;
-        }
-
-        .day-code { 
-            font-weight: 900; 
-            font-size: 19px; 
-            line-height: 1;
-            letter-spacing: -1px;
-        }
-
-        .day.illegal { 
-            border: 2px solid var(--error) !important; 
-            box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.4);
-            z-index: 1;
-        }
-
-        /* Status Colors */
         .day.X, .brush.X { background: var(--x-green); color: white; }
         .day.R, .brush.R { background: var(--r-yellow); color: #422006; }
         .day.A, .brush.A { background: var(--a-gray); color: white; }
@@ -162,15 +51,13 @@
         .day.CQ, .brush.CQ { background: var(--cq-orange); color: white; }
         .day.CI, .brush.CI { background: #334155; color: white; }
 
-        .day.X .day-num, .day.A .day-num, .day.C .day-num, .day.CQ .day-num, .day.CI .day-num { color: rgba(255, 255, 255, 0.8); }
-        .day.R .day-num { color: rgba(66, 32, 6, 0.7); }
-
         .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
         .alert { background: #450a0a; color: #fca5a5; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem; border: 1px solid #7f1d1d; }
         .success { background: #064e3b; color: #4ade80; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; border: 1px solid #065f46; }
-
         .btn { background: #2b2c2d; color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 8px; }
         input, select { background: #131314; color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px; }
+        .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; }
+        .notes-section { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -183,15 +70,15 @@
             <div class="stat-row">
                 <span>Guarantee:</span>
                 <select id="alv-cat" onchange="validateAll()">
-                    <option value="cat1">72-74.9 (12-14X)</option>
-                    <option value="cat2">75-80 (11-13X)</option>
+                    <option value="cat1">72:00 - 74:59</option>
+                    <option value="cat2">75:00 - 80:00</option>
                 </select>
             </div>
             <div class="stat-row"><span>Min Work:</span><input type="number" id="cfg-min-w" value="5" onchange="validateAll()" style="width:40px;"></div>
             <div class="stat-row"><span>Max Work:</span><input type="number" id="cfg-max-w" value="99" onchange="validateAll()" style="width:40px;"></div>
             <div class="stat-row"><span>Max X Blks:</span><input type="number" id="cfg-max-x-blks" value="4" onchange="validateAll()" style="width:40px;"></div>
             <div style="margin-top:10px; font-size: 0.85rem;">
-                <input type="checkbox" id="extra-x" onchange="validateAll()" checked> <label for="extra-x">Extra X Day</label>
+                <input type="checkbox" id="extra-x" onchange="validateAll()"> <label for="extra-x">Extra X Day</label>
             </div>
         </div>
         <div class="card">
@@ -222,64 +109,73 @@
             <div id="curr-container" class="calendar-card"></div>
             <div id="next-container" class="calendar-card side-month" onclick="changeFocusMonth(currentIdx + 1)"></div>
         </div>
+
+        <div class="card">
+            <h3 style="margin-top:0">Legend & Notes</h3>
+            <div class="legend-grid">
+                <div>
+                    <div><b>X:</b> X-day (Off)</div>
+                    <div><b>A:</b> Absence (Prorates X)</div>
+                    <div><b>CQ:</b> Training (Working)</div>
+                </div>
+                <div>
+                    <div><b>CI:</b> Carry In (Working)</div>
+                    <div><b>R:</b> Reserve (Working)</div>
+                    <div><b>C:</b> Coverage (Working)</div>
+                </div>
+            </div>
+            <div class="notes-section">
+                <ol>
+                    <li>Min work block doesn't apply to blocks touching the end of the month.</li>
+                    <li>Availability determines X-day requirement via contract table.</li>
+                </ol>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    // PRORATION DATA FROM SCREENSHOT
+    const PRORATION_LOOKUP = {
+        "30": {
+            "cat1": [0,0,1,1,2,2,3,3,3,4,4,5,5,6,6,7,7,7,8,8,9,9,10,10,10,11,11,12,12,13,13],
+            "cat2": [0,0,1,1,2,2,2,3,3,4,4,4,5,5,6,6,6,7,7,8,8,8,9,9,10,10,10,11,11,12,12]
+        },
+        "31": {
+            "cat1": [0,0,1,1,2,2,3,3,4,4,5,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14],
+            "cat2": [0,0,1,1,2,2,3,3,3,4,4,5,5,5,6,6,7,7,8,8,8,9,9,10,10,10,11,11,12,12,13,13]
+        }
+    };
+
     function generateBidMonths() {
         const months = [];
         const now = new Date();
-        // Start 2 months back from today to maintain history context
-        let startMonthOffset = -2; 
-        let refDate = new Date(now.getFullYear(), now.getMonth() + startMonthOffset, 1);
-
+        let refDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
         for (let i = 0; i < 15; i++) {
             const date = new Date(refDate.getFullYear(), refDate.getMonth() + i, 1);
             const y = date.getFullYear();
             const mIdx = date.getMonth(); 
-            
             let start, end, name;
-
-            // Map custom contract boundaries
-            if (mIdx === 0) { // Jan
-                start = new Date(y, 0, 1); end = new Date(y, 0, 30); name = "January";
-            } else if (mIdx === 1) { // Feb
-                start = new Date(y, 0, 31); end = new Date(y, 2, 1); name = "February";
-            } else if (mIdx === 2) { // Mar
-                start = new Date(y, 2, 2); end = new Date(y, 2, 31); name = "March";
-            } else if (mIdx === 3) { // Apr
-                start = new Date(y, 3, 1); end = new Date(y, 4, 1); name = "April";
-            } else if (mIdx === 4) { // May
-                start = new Date(y, 4, 2); end = new Date(y, 5, 1); name = "May";
-            } else if (mIdx === 5) { // Jun
-                start = new Date(y, 5, 2); end = new Date(y, 6, 1); name = "June";
-            } else if (mIdx === 6) { // Jul
-                start = new Date(y, 6, 2); end = new Date(y, 6, 31); name = "July";
-            } else if (mIdx === 7) { // Aug
-                start = new Date(y, 7, 1); end = new Date(y, 7, 30); name = "August";
-            } else if (mIdx === 8) { // Sep
-                start = new Date(y, 7, 31); end = new Date(y, 8, 30); name = "September";
-            } else if (mIdx === 9) { // Oct
-                start = new Date(y, 9, 1); end = new Date(y, 9, 31); name = "October";
-            } else if (mIdx === 10) { // Nov
-                start = new Date(y, 10, 1); end = new Date(y, 10, 30); name = "November";
-            } else { // Dec
-                start = new Date(y, 11, 1); end = new Date(y, 11, 31); name = "December";
-            }
-
+            if (mIdx === 0) { start = new Date(y, 0, 1); end = new Date(y, 0, 30); name = "January"; }
+            else if (mIdx === 1) { start = new Date(y, 0, 31); end = new Date(y, 2, 1); name = "February"; }
+            else if (mIdx === 2) { start = new Date(y, 2, 2); end = new Date(y, 2, 31); name = "March"; }
+            else if (mIdx === 3) { start = new Date(y, 3, 1); end = new Date(y, 4, 1); name = "April"; }
+            else if (mIdx === 4) { start = new Date(y, 4, 2); end = new Date(y, 5, 1); name = "May"; }
+            else if (mIdx === 5) { start = new Date(y, 5, 2); end = new Date(y, 6, 1); name = "June"; }
+            else if (mIdx === 6) { start = new Date(y, 6, 2); end = new Date(y, 6, 31); name = "July"; }
+            else if (mIdx === 7) { start = new Date(y, 7, 1); end = new Date(y, 7, 30); name = "August"; }
+            else if (mIdx === 8) { start = new Date(y, 7, 31); end = new Date(y, 8, 30); name = "September"; }
+            else if (mIdx === 9) { start = new Date(y, 9, 1); end = new Date(y, 9, 31); name = "October"; }
+            else if (mIdx === 10) { start = new Date(y, 10, 1); end = new Date(y, 10, 30); name = "November"; }
+            else { start = new Date(y, 11, 1); end = new Date(y, 11, 31); name = "December"; }
             const dayCount = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            months.push({
-                name: `${name} ${y}`,
-                start, end, dayCount,
-                id: `cbp-${y}-${mIdx}` // Unique ID ensures storage doesn't overlap years
-            });
+            months.push({ name: `${name} ${y}`, start, end, dayCount, id: `cbp-${y}-${mIdx}` });
         }
         return months;
     }
 
     const BID_MONTHS = generateBidMonths();
-    const PRORATION = { 28: {cat1:12, cat2:11}, 29: {cat1:12, cat2:11}, 30: {cat1:13, cat2:12}, 31: {cat1:14, cat2:13} };
-    const STORE_KEY = "rm_vRolling_Contract_Data";
+    const STORE_KEY = "rm_vRolling_Final_v4";
     let currentIdx = 2, activeBrush = 'R', illegalIndices = new Set(), monthData = {};
 
     function init() {
@@ -287,19 +183,14 @@
         const today = new Date();
         const saved = localStorage.getItem(STORE_KEY);
         const globalData = saved ? JSON.parse(saved) : {};
-
         BID_MONTHS.forEach((m, i) => {
             const opt = document.createElement('option');
             opt.value = i; opt.innerText = m.name;
             sel.appendChild(opt);
-            
-            const savedMonth = globalData[m.id];
-            monthData[i] = savedMonth || { 
+            monthData[i] = globalData[m.id] || { 
                 days: Array(m.dayCount).fill('R'), 
-                settings: { minW:5, maxW:99, maxX:4, alv:'cat1', extraX:true } 
+                settings: { minW:4, maxW:99, maxX:4, alv:'cat1', extraX:false } 
             };
-            
-            // Auto-focus on current contract month
             if (today >= m.start && today <= m.end) currentIdx = i;
         });
         changeFocusMonth(currentIdx);
@@ -307,22 +198,13 @@
 
     function save() {
         const dataToSave = {};
-        BID_MONTHS.forEach((m, i) => {
-            dataToSave[m.id] = monthData[i];
-        });
+        BID_MONTHS.forEach((m, i) => { dataToSave[m.id] = monthData[i]; });
         localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
     }
 
-    function setBrush(b) { 
-        activeBrush = b; 
-        document.querySelectorAll('.brush').forEach(el => el.classList.remove('active')); 
-        document.querySelector(`.brush.${b}`).classList.add('active'); 
-    }
-
     function changeFocusMonth(idx) {
-        const numericIdx = parseInt(idx);
-        if (numericIdx < 0 || numericIdx >= BID_MONTHS.length) return;
-        currentIdx = numericIdx;
+        if (idx < 0 || idx >= BID_MONTHS.length) return;
+        currentIdx = parseInt(idx);
         document.getElementById('month-selector').value = currentIdx;
         const s = monthData[currentIdx].settings;
         document.getElementById('cfg-min-w').value = s.minW;
@@ -333,10 +215,14 @@
         validateAll();
     }
 
-    function updateDay(mIdx, dIdx, event) {
-        if (event.type === 'mousedown' && event.button !== 0) return;
-        if (event.type === 'mouseenter' && event.buttons !== 1) return;
+    function setBrush(b) { 
+        activeBrush = b; 
+        document.querySelectorAll('.brush').forEach(el => el.classList.remove('active')); 
+        document.querySelector(`.brush.${b}`).classList.add('active'); 
+    }
 
+    function updateDay(mIdx, dIdx, event) {
+        if (event.type === 'mouseenter' && event.buttons !== 1) return;
         monthData[mIdx].days[dIdx] = activeBrush;
         save();
         validateAll();
@@ -355,37 +241,29 @@
         const m = BID_MONTHS[currentIdx];
         const currDays = monthData[currentIdx].days;
 
-        // X Blocks
+        const availCount = currDays.filter(d => d !== 'A').length;
+        const xUsed = currDays.filter(d => d === 'X').length;
+        const baseReq = PRORATION_LOOKUP[m.dayCount.toString()][s.alv][availCount];
+        const xReq = baseReq + (s.extraX ? 1 : 0);
+
+        document.getElementById('stat-avail').innerText = availCount;
+        document.getElementById('stat-x-used').innerText = xUsed;
+        document.getElementById('stat-x-req').innerText = xReq;
+
+        if(xUsed !== xReq) alerts.push(xUsed < xReq ? `Need ${xReq-xUsed} more X` : `Too many X`);
+
         let xBlks = 0, inX = false;
         currDays.forEach(day => { if(day==='X'){ if(!inX) {xBlks++; inX=true;} } else inX=false; });
         document.getElementById('stat-x-blks').innerText = xBlks;
-        if(xBlks > s.maxX) alerts.push(`Exceeds Max X Blocks (${xBlks})`);
+        if(xBlks > s.maxX) alerts.push(`Exceeds Max X Blocks`);
 
-        // X Proration
-        const avail = currDays.filter(d => d !== 'A').length;
-        const xUsed = currDays.filter(d => d === 'X').length;
-        const xBase = PRORATION[m.dayCount][s.alv] + (s.extraX ? 1 : 0);
-        const xReq = avail < m.dayCount ? Math.ceil(avail * (xBase / m.dayCount)) : xBase;
-
-        document.getElementById('stat-avail').innerText = avail;
-        document.getElementById('stat-x-used').innerText = xUsed;
-        document.getElementById('stat-x-req').innerText = xReq;
-        if(xUsed !== xReq) alerts.push(xUsed < xReq ? `Need ${xReq-xUsed} more X-days` : `Too many X-days`);
-
-        // Work Block Check (Current + Previous Month overlap)
         const pIdx = currentIdx > 0 ? currentIdx - 1 : null;
-        const pDays = pIdx !== null ? monthData[pIdx].days : [];
-        const combo = [...pDays, ...currDays];
-        const offset = pDays.length;
-
+        const combo = [...(pIdx !== null ? monthData[pIdx].days : []), ...currDays];
+        const offset = pIdx !== null ? monthData[pIdx].days.length : 0;
         let block = [];
         combo.forEach((code, i) => {
-            if(['R','C','CQ','CI'].includes(code)) {
-                block.push(i);
-            } else {
-                checkWorkBlock(block, offset, currDays.length, combo, alerts);
-                block = [];
-            }
+            if(['R','C','CQ','CI'].includes(code)) { block.push(i); } 
+            else { checkWorkBlock(block, offset, currDays.length, combo, alerts); block = []; }
         });
         checkWorkBlock(block, offset, currDays.length, combo, alerts);
 
@@ -395,19 +273,16 @@
 
     function checkWorkBlock(indices, offset, currLen, combo, alerts) {
         if (indices.length === 0) return;
-        const hasRes = indices.some(idx => ['R', 'C', 'CQ'].includes(combo[idx]));
-        if (!hasRes) return;
+        if (!indices.some(idx => ['R', 'C', 'CQ'].includes(combo[idx]))) return;
         const s = monthData[currentIdx].settings;
         const lastDayIdx = offset + currLen - 1;
-        const endsOnLastDay = indices.includes(lastDayIdx);
-
-        if (indices.length < s.minW && !endsOnLastDay) {
+        if (indices.length < s.minW && !indices.includes(lastDayIdx)) {
             indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
-            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Short Work Block (${indices.length} days)`);
+            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Short Work Block`);
         }
         if (indices.length > s.maxW) {
             indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
-            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Work Block exceeds ${s.maxW}`);
+            alerts.push(`Work Block exceeds Max`);
         }
     }
 
@@ -415,17 +290,12 @@
         const container = document.getElementById(containerId);
         if (idx < 0 || idx >= BID_MONTHS.length) { container.innerHTML = ""; return; }
         const m = BID_MONTHS[idx];
-        const rangeStr = `${m.start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} - ${m.end.toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
-        
-        container.innerHTML = `<div class="card"><h3>${m.name}</h3><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">${rangeStr}</div><div class="calendar-grid"></div></div>`;
+        container.innerHTML = `<div class="card"><h3>${m.name}</h3><div class="calendar-grid"></div></div>`;
         const grid = container.querySelector('.calendar-grid');
-        
         ['S','M','T','W','T','F','S'].forEach(d => {
             const el = document.createElement('div'); el.className='weekday'; el.innerText=d; grid.appendChild(el);
         });
-
         for(let i=0; i < m.start.getDay(); i++) grid.appendChild(document.createElement('div'));
-
         monthData[idx].days.forEach((code, dIdx) => {
             const d = document.createElement('div');
             const date = new Date(m.start); date.setDate(m.start.getDate() + dIdx);
@@ -446,9 +316,7 @@
     function exportData() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(monthData));
         const dlAnchor = document.createElement('a');
-        dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", "reserve_patterns_rolling.json");
-        dlAnchor.click();
+        dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", "reserve_data.json"); dlAnchor.click();
     }
 
     function importData(event) {
@@ -456,8 +324,7 @@
         reader.onload = function(e) {
             const imported = JSON.parse(e.target.result);
             Object.keys(imported).forEach(key => { monthData[key] = imported[key]; });
-            save();
-            changeFocusMonth(currentIdx);
+            save(); validateAll();
         };
         reader.readAsText(event.target.files[0]);
     }
