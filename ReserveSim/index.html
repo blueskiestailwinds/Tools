@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reserve Master - 2026</title>
+    <title>Reserve Master - Rolling Edition</title>
     <style>
         :root {
             --x-green: #22c55e; --r-yellow: #fde047; --a-gray: #94a3b8; 
@@ -42,7 +42,6 @@
         .date-range-sub { text-align: center; font-size: 0.65rem; color: #94a3b8; margin-bottom: 10px; }
         .btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 0.8rem; font-weight: 600; margin-top: 5px; }
         .btn:hover { background: #f8fafc; border-color: #94a3b8; }
-
         .instructions { margin-top: 25px; max-width: 1030px; line-height: 1.6; }
         .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; }
         .legend-item { margin-bottom: 8px; }
@@ -50,8 +49,9 @@
         .notes-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 0.85rem; }
     </style>
 </head>
+<body>
 
-<body><div class="layout">
+<div class="layout">
     <div class="sidebar">
         <div class="card">
             <h3 style="font-size: 0.7rem; color: #94a3b8; text-align:left; margin:0;">PRIMARY BID PERIOD</h3>
@@ -127,23 +127,32 @@
 </div>
 
 <script>
-    const BID_MONTHS = [
-        { name: "January",   start: new Date(2026, 0, 1),  end: new Date(2026, 0, 30) },
-        { name: "February",  start: new Date(2026, 0, 31), end: new Date(2026, 2, 1)  },
-        { name: "March",     start: new Date(2026, 2, 2),  end: new Date(2026, 2, 31) },
-        { name: "April",     start: new Date(2026, 3, 1),  end: new Date(2026, 4, 1)  },
-        { name: "May",       start: new Date(2026, 4, 2),  end: new Date(2026, 5, 1)  },
-        { name: "June",      start: new Date(2026, 5, 2),  end: new Date(2026, 6, 1)  },
-        { name: "July",      start: new Date(2026, 6, 2),  end: new Date(2026, 6, 31) },
-        { name: "August",    start: new Date(2026, 7, 1),  end: new Date(2026, 7, 30) },
-        { name: "September", start: new Date(2026, 7, 31), end: new Date(2026, 8, 30) },
-        { name: "October",   start: new Date(2026, 9, 1),  end: new Date(2026, 9, 31) },
-        { name: "November",  start: new Date(2026, 10, 1), end: new Date(2026, 10, 30)},
-        { name: "December",  start: new Date(2026, 11, 1), end: new Date(2026, 11, 31)}
-    ];
+    function generateBidMonths() {
+        const months = [];
+        const now = new Date();
+        const startMonth = now.getMonth() - 2; 
+        const startYear = now.getFullYear();
 
-    const PRORATION = { 30: {cat1:13, cat2:12}, 31: {cat1:14, cat2:13} };
-    const STORE_KEY = "rm_v13_data";
+        for (let i = 0; i < 15; i++) {
+            const date = new Date(startYear, startMonth + i, 1);
+            const name = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+            
+            months.push({
+                name: name,
+                start: firstDay,
+                end: lastDay,
+                dayCount: lastDay.getDate(),
+                id: `${date.getFullYear()}-${date.getMonth()}` 
+            });
+        }
+        return months;
+    }
+
+    const BID_MONTHS = generateBidMonths();
+    const PRORATION = { 28: {cat1:12, cat2:11}, 29: {cat1:12, cat2:11}, 30: {cat1:13, cat2:12}, 31: {cat1:14, cat2:13} };
+    const STORE_KEY = "rm_vRolling_data";
     let currentIdx = 2, activeBrush = 'R', illegalIndices = new Set(), monthData = {};
 
     function init() {
@@ -156,22 +165,38 @@
             const opt = document.createElement('option');
             opt.value = i; opt.innerText = m.name;
             sel.appendChild(opt);
-            const diff = Math.ceil(Math.abs(m.end - m.start) / (1000 * 60 * 60 * 24)) + 1;
-            m.dayCount = diff;
-            monthData[i] = globalData[i] || { days: Array(diff).fill('R'), settings: { minW:5, maxW:99, maxX:4, alv:'cat1', extraX:true } };
-            if (today >= m.start && today <= m.end) currentIdx = i;
+            
+            // Link storage to the unique ID (e.g., "2026-3")
+            const savedMonth = globalData[m.id];
+            monthData[i] = savedMonth || { 
+                days: Array(m.dayCount).fill('R'), 
+                settings: { minW:5, maxW:99, maxX:4, alv:'cat1', extraX:true } 
+            };
+            
+            if (today.getMonth() === m.start.getMonth() && today.getFullYear() === m.start.getFullYear()) currentIdx = i;
         });
         changeFocusMonth(currentIdx);
     }
 
-    function save() { localStorage.setItem(STORE_KEY, JSON.stringify(monthData)); }
-    function setBrush(b) { activeBrush = b; document.querySelectorAll('.brush').forEach(el => el.classList.remove('active')); document.querySelector(`.brush.${b}`).classList.add('active'); }
+    function save() {
+        const dataToSave = {};
+        BID_MONTHS.forEach((m, i) => {
+            dataToSave[m.id] = monthData[i];
+        });
+        localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
+    }
+
+    function setBrush(b) { 
+        activeBrush = b; 
+        document.querySelectorAll('.brush').forEach(el => el.classList.remove('active')); 
+        document.querySelector(`.brush.${b}`).classList.add('active'); 
+    }
 
     function exportData() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(monthData));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "reserve_patterns_2026.json");
+        downloadAnchorNode.setAttribute("download", "reserve_patterns_rolling.json");
         document.body.appendChild(downloadAnchorNode);
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
@@ -180,7 +205,11 @@
     function importData(event) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            monthData = JSON.parse(e.target.result);
+            const imported = JSON.parse(e.target.result);
+            // Compatibility check: handle both array-style and ID-style imports
+            Object.keys(imported).forEach(key => {
+                monthData[key] = imported[key];
+            });
             save();
             changeFocusMonth(currentIdx);
         };
@@ -188,8 +217,9 @@
     }
 
     function changeFocusMonth(idx) {
-        if (idx < 0 || idx >= BID_MONTHS.length) return;
-        currentIdx = parseInt(idx);
+        const numericIdx = parseInt(idx);
+        if (numericIdx < 0 || numericIdx >= BID_MONTHS.length) return;
+        currentIdx = numericIdx;
         document.getElementById('month-selector').value = currentIdx;
         const s = monthData[currentIdx].settings;
         document.getElementById('cfg-min-w').value = s.minW;
@@ -202,10 +232,6 @@
 
     // 1. Update the function to check hardware state
     function updateDay(mIdx, dIdx, event) {
-        // Only allow LEFT mouse button for initial click
-        if (event.type === 'mousedown' && event.button !== 0) return;
-
-        // Only drag-paint if left button is physically held
         if (event.type === 'mouseenter' && event.buttons !== 1) return;
 
         monthData[mIdx].days[dIdx] = activeBrush;
@@ -220,6 +246,7 @@
         s.maxX = parseInt(document.getElementById('cfg-max-x-blks').value);
         s.alv = document.getElementById('alv-cat').value;
         s.extraX = document.getElementById('extra-x').checked;
+        
         illegalIndices.clear();
         const alerts = [];
         const m = BID_MONTHS[currentIdx];
@@ -232,7 +259,7 @@
 
         const avail = currDays.filter(d => d !== 'A').length;
         const xUsed = currDays.filter(d => d === 'X').length;
-        const xBase = PRORATION[m.dayCount >= 31 ? 31 : 30][s.alv] + (s.extraX ? 1 : 0);
+        const xBase = PRORATION[m.dayCount][s.alv] + (s.extraX ? 1 : 0);
         const xReq = avail < m.dayCount ? Math.ceil(avail * (xBase / m.dayCount)) : xBase;
 
         document.getElementById('stat-avail').innerText = avail;
