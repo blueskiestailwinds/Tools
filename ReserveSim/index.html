@@ -202,9 +202,12 @@
 
     // 1. Update the function to check hardware state
     function updateDay(mIdx, dIdx, event) {
-        // If it's a mouseenter event, only paint if the left mouse button (1) is actually pressed
+        // Only allow LEFT mouse button for initial click
+        if (event.type === 'mousedown' && event.button !== 0) return;
+
+        // Only drag-paint if left button is physically held
         if (event.type === 'mouseenter' && event.buttons !== 1) return;
-        
+
         monthData[mIdx].days[dIdx] = activeBrush;
         save();
         validateAll();
