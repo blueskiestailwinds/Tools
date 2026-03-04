@@ -50,7 +50,6 @@
         .notes-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 0.85rem; }
     </style>
 </head>
-<body onmousedown="isDrawing = true" onmouseup="isDrawing = false">
 
 <div class="layout">
     <div class="sidebar">
@@ -145,7 +144,7 @@
 
     const PRORATION = { 30: {cat1:13, cat2:12}, 31: {cat1:14, cat2:13} };
     const STORE_KEY = "rm_v13_data";
-    let currentIdx = 2, activeBrush = 'R', isDrawing = false, illegalIndices = new Set(), monthData = {};
+    let currentIdx = 2, activeBrush = 'R', illegalIndices = new Set(), monthData = {};
 
     function init() {
         const sel = document.getElementById('month-selector');
@@ -201,7 +200,11 @@
         validateAll();
     }
 
-    function updateDay(mIdx, dIdx) {
+    // 1. Update the function to check hardware state
+    function updateDay(mIdx, dIdx, event) {
+        // If it's a mouseenter event, only paint if the left mouse button (1) is actually pressed
+        if (event.type === 'mouseenter' && event.buttons !== 1) return;
+        
         monthData[mIdx].days[dIdx] = activeBrush;
         save();
         validateAll();
@@ -286,8 +289,8 @@
             const date = new Date(m.start); date.setDate(m.start.getDate() + dIdx);
             d.className = `day ${code} ${(!isSide && illegalIndices.has(dIdx))?'illegal':''}`;
             d.innerHTML = `<span class="day-num">${date.getDate()}</span><span class="day-code">${code}</span>`;
-            d.onmousedown = () => updateDay(idx, dIdx);
-            d.onmouseenter = () => { if(isDrawing) updateDay(idx, dIdx); };
+            d.onmousedown = (e) => updateDay(idx, dIdx, e);
+            d.onmouseenter = (e) => updateDay(idx, dIdx, e);
             grid.appendChild(d);
         });
     }
