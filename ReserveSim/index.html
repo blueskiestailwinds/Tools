@@ -61,10 +61,35 @@
             min-height: 345px;
         }
         .calendar-card.side-month { opacity: 0.4; transform: scale(0.95); cursor: pointer; }
-        .palette { display: flex; gap: 10px; background: var(--card-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; justify-content: center; }
-        .brush { width: 44px; height: 44px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 900; border: 2px solid transparent; }
+        .palette { 
+            display: flex; 
+            gap: 10px; 
+            background: var(--card-bg); 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 20px; 
+            justify-content: center; 
+        }
+        .brush { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 900; 
+            border: 2px solid transparent; 
+        }
         .brush.active { border-color: #fff; transform: translateY(-2px); }
-        .weekday { text-align: center; font-size: 0.75rem; font-weight: bold; color: var(--text-muted); padding-bottom: 5px; }
+        .weekday { 
+            text-align: center; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            color: var(--text-muted); 
+            padding-bottom: 5px; 
+        }
         .day { 
             width: 44px; 
             height: 52px; 
@@ -104,6 +129,80 @@
         input, select { background: #131314; color: white; border: 1px solid var(--border); border-radius: 4px; padding: 4px; }
         .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; }
         .notes-section { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; font-size: 0.85rem; }
+
+        /* Mode Toggle Styling */
+        .mode-toggle {
+            position: relative;
+            width: 140px; /* Increased from 100px */
+            height: 40px;  /* Increased from 32px */
+        }
+
+        .mode-toggle input {
+            display: none;
+        }
+
+        .mode-toggle label {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            background: #131314;
+            border: 2px solid var(--border); /* Slightly thicker border for "Pro" look */
+            border-radius: 25px;
+            cursor: pointer;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-label {
+            font-size: 13px; /* Bigger text */
+            font-weight: 900;
+            z-index: 2;
+            transition: color 0.2s, transform 0.2s;
+            user-select: none;
+            letter-spacing: 1px;
+        }
+
+        .mode-label.pbs {
+            color: var(--text-main);
+        }
+
+        .mode-label.pcs {
+            color: var(--text-muted);
+        }
+
+        .switch-slider {
+            position: absolute;
+            /* Perfect vertical centering */
+            top: 50%;
+            left: 4px;
+            transform: translateY(-50%);
+            
+            width: 65px; 
+            height: 30px; 
+            /* High-visibility green for both states */
+            background: var(--x-green); 
+            border-radius: 20px;
+            transition: transform 0.2s ease-in-out;
+            z-index: 1;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Toggle Logic */
+        #mode-switch:checked + label .switch-slider {
+            /* Maintain the vertical centering while sliding horizontally */
+            transform: translate(67px, -50%);
+            background: var(--x-green);
+        }
+        #mode-switch:checked + label .switch-slider {
+            transform: translate(67px, -50%);
+        }
+
+        #mode-switch:checked + label .pbs {
+            color: var(--text-muted);
+        }
+
     </style>
 </head>
 <body>
@@ -137,6 +236,19 @@
             <button class="btn" onclick="exportData()">💾 Export Patterns</button>
             <button class="btn" onclick="document.getElementById('importFile').click()">📂 Import Patterns</button>
             <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+        </div>
+        <div class="card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.5px;">SYSTEM MODE</span>
+                <div class="mode-toggle">
+                    <input type="checkbox" id="mode-switch" onchange="handleModeChange()">
+                    <label for="mode-switch">
+                        <span class="mode-label pbs">PBS</span>
+                        <span class="mode-label pcs">PCS</span>
+                        <div class="switch-slider"></div>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -192,6 +304,15 @@
             "cat2": [0,0,1,1,2,2,3,3,3,4,4,5,5,5,6,6,7,7,8,8,8,9,9,10,10,10,11,11,12,12,13,13]
         }
     };
+
+    function handleModeChange() {
+        const isPCS = document.getElementById('mode-switch').checked;
+        console.log("Mode switched to:", isPCS ? "PCS" : "PBS");
+        
+        // I'm ready for your logic here!
+        validateAll(); 
+    }
+
 
     function generateBidMonths() {
         const months = [];
@@ -320,15 +441,48 @@
 
     function checkWorkBlock(indices, offset, currLen, combo, alerts) {
         if (indices.length === 0) return;
+        
+        // Only validate if the block contains actual working days
         if (!indices.some(idx => ['R', 'C', 'CQ'].includes(combo[idx]))) return;
+
         const s = monthData[currentIdx].settings;
-        const lastDayIdx = offset + currLen - 1;
-        if (indices.length < s.minW && !indices.includes(lastDayIdx)) {
-            indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
-            if (indices.some(idx => idx >= offset && idx < offset + currLen)) alerts.push(`Short Work Block`);
+        const isPCS = document.getElementById('mode-switch').checked;
+        
+        const startOfMonthIdx = offset;
+        const endOfMonthIdx = offset + currLen - 1;
+
+        // Logic Flags
+        const touchesStart = indices.includes(startOfMonthIdx);
+        const touchesEnd = indices.includes(endOfMonthIdx);
+
+        let isOrphanedAllowed = false;
+
+        if (isPCS) {
+            // PCS: Min work block ignored at BOTH start and end
+            if (touchesStart || touchesEnd) isOrphanedAllowed = true;
+        } else {
+            // PBS: Min work block ignored ONLY at the end
+            if (touchesEnd) isOrphanedAllowed = true;
         }
+
+        // Validation
+        if (indices.length < s.minW && !isOrphanedAllowed) {
+            indices.forEach(idx => {
+                if (idx >= offset && idx < offset + currLen) {
+                    illegalIndices.add(idx - offset);
+                }
+            });
+            if (indices.some(idx => idx >= offset && idx < offset + currLen)) {
+                alerts.push(`Short Work Block`);
+            }
+        }
+
         if (indices.length > s.maxW) {
-            indices.forEach(idx => { if (idx >= offset && idx < offset + currLen) illegalIndices.add(idx - offset); });
+            indices.forEach(idx => {
+                if (idx >= offset && idx < offset + currLen) {
+                    illegalIndices.add(idx - offset);
+                }
+            });
             alerts.push(`Work Block exceeds Max`);
         }
     }
