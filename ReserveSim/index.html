@@ -183,8 +183,9 @@
         .d-palette .brush { width: 44px; height: 44px; }
 
         .d-stat-row {
-            display: flex; justify-content: space-between;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+            gap: 12px;
         }
 
         .d-legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; }
@@ -196,7 +197,7 @@
         }
         .d-sidebar h3 { color: var(--text-muted); margin-bottom: 8px; }
 
-        .d-num-input { width: 40px; text-align: center; }
+        .d-num-input { width: 80px; text-align: center; padding: 4px 8px; }
         .flex-between { display: flex; align-items: center; justify-content: space-between; }
 
         /* desktop mode toggle sizing */
@@ -370,7 +371,7 @@
                 <select id="d-month-selector" onchange="changeFocusMonth(parseInt(this.value))" style="width:100%;margin-top:10px;"></select>
                 <div class="d-stat-row">
                     <span>Reserve Guarantee:</span>
-                    <select id="d-alv-cat" oninput="onSettingsChange()">
+                    <select id="d-alv-cat" oninput="onSettingsChange()" style="width:120px">
                         <option value="cat1">72:00 - 74:59</option>
                         <option value="cat2">75:00 - 80:00</option>
                     </select>
