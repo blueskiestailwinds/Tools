@@ -367,13 +367,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
         }
 
-        /* Toggle Logic */
-        #mode-switch:checked+label .switch-slider {
-            /* Maintain the vertical centering while sliding horizontally */
-            transform: translate(67px, -50%);
-            background: var(--x-green);
-        }
-
         #mode-switch:checked+label .switch-slider {
             transform: translate(67px, -50%);
         }
@@ -400,11 +393,11 @@
                     </select>
                 </div>
                 <div class="stat-row"><span>Min Work:</span><input type="number" id="cfg-min-w" class="num-input"
-                        value="5" onchange="validateAll()"></div>
+                        value="5" min="1" max="20" onchange="validateAll()"></div>
                 <div class="stat-row"><span>Max Work:</span><input type="number" id="cfg-max-w" class="num-input"
-                        value="5" onchange="validateAll()"></div>
+                        value="5" min="1" max="99" onchange="validateAll()"></div>
                 <div class="stat-row"><span>Max X Blks:</span><input type="number" id="cfg-max-x-blks" class="num-input"
-                        value="5" onchange="validateAll()"></div>
+                        value="5" min="0" max="10" onchange="validateAll()"></div>
                 <div style="margin-top:10px; font-size: 0.85rem;">
                     <input type="checkbox" id="extra-x" onchange="validateAll()"> <label for="extra-x">Extra X
                         Day</label>
@@ -494,8 +487,6 @@
 
         function handleModeChange() {
             const isPCS = document.getElementById('mode-switch').checked;
-            console.log("Mode switched to:", isPCS ? "PCS" : "PBS");
-
             // I'm ready for your logic here!
             validateAll();
         }
@@ -550,10 +541,14 @@
             changeFocusMonth(currentIdx);
         }
 
+        let saveTimer;
         function save() {
-            const dataToSave = {};
-            BID_MONTHS.forEach((m, i) => { dataToSave[m.id] = monthData[i]; });
-            localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                const dataToSave = {};
+                BID_MONTHS.forEach((m, i) => { dataToSave[m.id] = monthData[i]; });
+                localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
+            }, 300);
         }
 
         function changeFocusMonth(idx) {
@@ -701,22 +696,49 @@
             renderMonth(currentIdx + 1, 'next-container', true);
         }
 
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(monthData));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", "reserve_data.json"); dlAnchor.click();
-        }
+        async function exportData() {
+            const json = JSON.stringify(monthData, null, 2);
 
+            // Use File System Access API if available (Chrome/Edge)
+            if (window.showSaveFilePicker) {
+                try {
+                    const fileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'reserve_data.json',
+                        types: [{
+                            description: 'JSON File',
+                            accept: { 'application/json': ['.json'] },
+                        }],
+                    });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(json);
+                    await writable.close();
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // User cancelled — do nothing
+                    // Fall through to legacy download on other errors
+                }
+            }
+
+            // Fallback for Firefox/Safari
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(json);
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "reserve_data.json");
+            dlAnchor.click();
+        }
         function importData(event) {
             const reader = new FileReader();
             reader.onload = function (e) {
-                const imported = JSON.parse(e.target.result);
-                Object.keys(imported).forEach(key => { monthData[key] = imported[key]; });
-                save(); validateAll();
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    Object.keys(imported).forEach(key => { monthData[key] = imported[key]; });
+                    save(); validateAll();
+                } catch {
+                    alert('Invalid file. Please import a valid reserve_data.json.');
+                }
             };
             reader.readAsText(event.target.files[0]);
         }
-
         init();
     </script>
 </body>
