@@ -258,7 +258,7 @@
         }
         .m-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .m-calendar-grid .weekday { font-size: 0.65rem; padding-bottom: 4px; }
-        .m-calendar-grid .day     { aspect-ratio: 1/1.2; cursor: pointer; touch-action: none; }
+        .m-calendar-grid .day     { aspect-ratio: 1/1.2; cursor: pointer; touch-action: pan-y; }
         .m-calendar-grid .day-num  { font-size: 9px; margin-bottom: 2px; }
         .m-calendar-grid .day-code { font-size: 14px; letter-spacing: -0.5px; }
 
@@ -972,7 +972,9 @@ function initSwipe() {
     let sx=0, sy=0, active=false;
     vp.addEventListener('touchstart', e => {
         if (e.touches.length!==1) return;
-        sx=e.touches[0].clientX; sy=e.touches[0].clientY; active=true;
+        sx=e.touches[0].clientX; 
+        sy=e.touches[0].clientY; 
+        active=true;
     }, { passive:true });
     vp.addEventListener('touchmove', e => {
         if (!active) return;
