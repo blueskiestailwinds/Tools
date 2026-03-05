@@ -181,9 +181,6 @@
         .d-num-input { width: 80px; text-align: center; padding: 4px 8px; }
         .flex-between { display: flex; align-items: center; justify-content: space-between; }
 
-
-
-
         /* ═══════════════════════════════════════════════════════════
            MOBILE
         ═══════════════════════════════════════════════════════════ */
@@ -232,9 +229,11 @@
             will-change: transform;
         }
         .m-panel {
-            width: calc(100% / 3); height: 100%;
-            overflow-y: auto; overflow-x: hidden;
-            padding: 12px; -webkit-overflow-scrolling: touch;
+            width: calc(100% / 3); 
+            height: 100%;
+            overflow-y: auto; 
+            overflow-x: hidden;
+            padding: 12px; 
         }
         .m-panel.side-panel {
             opacity: 0.38; pointer-events: none;
@@ -270,14 +269,6 @@
         .m-stat-chip .val { display: block; font-size: 1.1rem; font-weight: 700; }
         .m-stat-chip .lbl { color: var(--text-muted); font-size: 0.62rem; }
 
-        .m-legend-card {
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 0.78rem;
-        }
-        .m-legend-card h4 {
-            margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase;
-            color: var(--text-muted); letter-spacing: 0.5px;
-        }
         #m-bottom-sheet {
             position: fixed; left: 0; right: 0; bottom: 0;
             background: var(--card-bg); border-top: 1px solid var(--border);
@@ -329,7 +320,9 @@
             padding: 6px 8px; border-radius: 6px;
             font-size: 0.85rem; flex: 1; min-width: 0;
         }
-        #m-month-selector { width: 100%; flex: none; }
+        #m-month-selector { 
+            width: 100%; 
+        }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -426,7 +419,6 @@
             <div id="m-month-title">Loading…</div>
             <div class="m-nav-btn" id="m-btn-next">&#8250;</div>
         </div>
-
     </div>
 
     <div id="m-swipe-viewport">
@@ -630,7 +622,6 @@ function init() {
     }
 }
 
-
 /* ═══════════════════════════════════════════════════════════════
    SAVE
 ═══════════════════════════════════════════════════════════════ */
@@ -639,14 +630,6 @@ function save() {
     BID_MONTHS.forEach((m, i) => { out[m.id] = monthData[i]; });
     localStorage.setItem(STORE_KEY, JSON.stringify(out));
 }
-
-// Lightweight settings-only save — no need to re-serialize all day arrays
-function saveSettings() {
-    // Settings are embedded in monthData, so we still use the same key,
-    // but we only call this from settings inputs, not from painting.
-    save();
-}
-
 
 /* ═══════════════════════════════════════════════════════════════
    NAVIGATION
@@ -803,17 +786,15 @@ function validateAll() {
 
 // Called by all settings inputs — saves then validates
 function onSettingsChange() {
-    saveSettings();
+    save();
     validateAll();
 }
 
 function checkWorkBlock(indices, offset, currLen, combo, alerts, s) {
     if (indices.length === 0) return;
     if (!indices.some(i => ['R','C','CQ'].includes(combo[i]))) return;
-    const tStart  = indices.includes(offset);
     const tEnd    = indices.includes(offset + currLen - 1);
-    const orphan  = tEnd;
-    if (indices.length < s.minW && !orphan) {
+    if (indices.length < s.minW && !tEnd) {
         indices.forEach(i => { if (i>=offset && i<offset+currLen) illegalIndices.add(i-offset); });
         if (indices.some(i => i>=offset && i<offset+currLen)) alerts.push('Short Work Block');
     }
@@ -869,17 +850,6 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
         </div>
         <div style="margin-top:10px">
             ${alerts.length ? alerts.map(a=>`<div class="alert">⚠️ ${a}</div>`).join('') : '<div class="success">✓ LEGAL</div>'}
-        </div>
-        <div class="m-legend-card">
-            <h4>Legend</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;color:var(--text-muted)">
-                <div><b style="color:var(--text-main)">X</b> X-day</div>
-                <div><b style="color:var(--text-main)">CI</b> Carry In</div>
-                <div><b style="color:var(--text-main)">A</b> Absence</div>
-                <div><b style="color:var(--text-main)">R</b> Reserve</div>
-                <div><b style="color:var(--text-main)">CQ</b> Training</div>
-                <div><b style="color:var(--text-main)">C</b> Coverage</div>
-            </div>
         </div>` : '';
 
     container.innerHTML = `
@@ -955,7 +925,6 @@ function initDesktopMousePainting() {
         }
     });
 }
-
 
 /* ═══════════════════════════════════════════════════════════════
    SWIPE
