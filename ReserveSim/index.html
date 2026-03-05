@@ -539,6 +539,8 @@
                 };
                 if (today >= m.start && today <= m.end) currentIdx = i;
             });
+            const savedIdx = localStorage.getItem(STORE_KEY + '_idx');
+            if (savedIdx !== null) currentIdx = parseInt(savedIdx);
             changeFocusMonth(currentIdx);
         }
 
@@ -551,6 +553,7 @@
         function changeFocusMonth(idx) {
             if (idx < 0 || idx >= BID_MONTHS.length) return;
             currentIdx = parseInt(idx);
+            localStorage.setItem(STORE_KEY + '_idx', currentIdx);
             document.getElementById('month-selector').value = currentIdx;
             const s = monthData[currentIdx].settings;
             document.getElementById('cfg-min-w').value = s.minW;
