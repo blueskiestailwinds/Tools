@@ -1015,7 +1015,8 @@ function initBottomSheet() {
 
     const sheet  = document.getElementById('m-bottom-sheet');
     const handle = document.getElementById('m-sheet-handle-area');
-    let open=false, startY=0, startT=0, dragging=false, baseT=0;
+    const body   = document.getElementById('m-sheet-body');
+    let open=false, startY=0, startT=0, dragging=false, baseT=0, locked=false;
 
     function maxT() {
         return sheet.offsetHeight - parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sheet-peek'));
@@ -1027,26 +1028,46 @@ function initBottomSheet() {
     });
 
     sheet.addEventListener('touchstart', e => {
-        startY=e.touches[0].clientY; startT=Date.now();
-        dragging=false; baseT=open?0:maxT();
+        startY   = e.touches[0].clientY;
+        startT   = Date.now();
+        dragging = false;
+        baseT    = open ? 0 : maxT();
+        // Lock out drag-to-close if touch starts inside the scrollable body while scrolled down
+        locked = body.contains(e.target) && body.scrollTop > 0;
     }, { passive:true });
 
     sheet.addEventListener('touchmove', e => {
-        const dy=e.touches[0].clientY-startY;
-        if (Math.abs(dy)>8) dragging=true;
+        const dy = e.touches[0].clientY - startY;
+
+        if (locked) {
+            // User scrolled back to top and is now dragging down — allow close
+            if (body.scrollTop <= 0 && dy > 0) {
+                locked = false;
+            } else {
+                return; // let native scroll handle it
+            }
+        }
+
+        if (Math.abs(dy) > 8) dragging = true;
         if (!dragging) return;
-        const t=Math.max(0,Math.min(maxT(),baseT+dy));
-        sheet.style.transition='none';
-        sheet.style.transform=`translateY(${t}px)`;
+
+        // Don't steal upward drags when sheet is fully open — let content scroll
+        if (open && dy < 0) return;
+
+        const t = Math.max(0, Math.min(maxT(), baseT + dy));
+        sheet.style.transition = 'none';
+        sheet.style.transform  = `translateY(${t}px)`;
         e.preventDefault();
     }, { passive:false });
 
     sheet.addEventListener('touchend', e => {
         if (!dragging) return;
-        const dy=e.changedTouches[0].clientY-startY;
-        const vel=Math.abs(dy)/(Date.now()-startT);
-        sheet.style.transition=''; sheet.style.transform='';
-        open = vel>0.5 ? dy<0 : (baseT+dy)<maxT()*0.45;
+        dragging = false;
+        const dy  = e.changedTouches[0].clientY - startY;
+        const vel = Math.abs(dy) / (Date.now() - startT);
+        sheet.style.transition = '';
+        sheet.style.transform  = '';
+        open = vel > 0.5 ? dy < 0 : (baseT + dy) < maxT() * 0.45;
         sheet.classList.toggle('expanded', open);
     }, { passive:true });
 }
