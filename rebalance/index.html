@@ -335,21 +335,21 @@
                     <label for="totalPortfolio">Total Retirement Portfolio</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this)">
+                        <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
                 <div class="input-row">
                     <label for="compContrib">Company Contributions</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="compContrib" value="0" oninput="formatNumber(this)">
+                        <input type="text" id="compContrib" value="0" oninput="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
                 <div class="input-row">
                     <label for="pretax">401(k) Pre-Tax</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="pretax" value="0" oninput="formatNumber(this)">
+                        <input type="text" id="pretax" value="0" oninput="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
             </div>
@@ -372,25 +372,25 @@
                 <tbody>
                     <tr>
                         <td>Non-US Stock Index</td>
-                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="foreignPct" value="20" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="foreignPct" value="20" oninput="validatePercentages(); calculateGroup1()"><span class="input-suffix">%</span></div></div></td>
                         <td class="result-pct result-placeholder" id="foreignG1">—</td>
                         <td class="result-dollar result-placeholder" id="foreignDollar">—</td>
                     </tr>
                     <tr>
                         <td>S&amp;P 500 Index</td>
-                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="largePct" value="56" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="largePct" value="56" oninput="validatePercentages(); calculateGroup1()"><span class="input-suffix">%</span></div></div></td>
                         <td class="result-pct result-placeholder" id="largeG1">—</td>
                         <td class="result-dollar result-placeholder" id="largeDollar">—</td>
                     </tr>
                     <tr>
                         <td>US Small/Mid Index</td>
-                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="smallPct" value="14" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="smallPct" value="14" oninput="validatePercentages(); calculateGroup1()"><span class="input-suffix">%</span></div></div></td>
                         <td class="result-pct result-placeholder" id="smallG1">—</td>
                         <td class="result-dollar result-placeholder" id="smallDollar">—</td>
                     </tr>
                     <tr>
                         <td>Diversified Bond Fund</td>
-                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="bondPct" value="10" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="bondPct" value="10" oninput="validatePercentages(); calculateGroup1()"><span class="input-suffix">%</span></div></div></td>
                         <td class="result-pct result-placeholder" id="bondG1">—</td>
                         <td class="result-dollar result-placeholder" id="bondDollar">—</td>
                     </tr>
@@ -398,9 +398,8 @@
             </table>
         </div>
 
-        <div class="panel-section" style="display:flex; align-items:center; justify-content:center; gap:16px;">
+        <div class="panel-section" id="errorSection" style="display:none;">
             <div class="error-message" id="errorMessage"></div>
-            <button class="btn-calculate" id="calculateBtn" onclick="calculateGroup1()">Calculate Group 1 Targets</button>
         </div>
     </div>
 
@@ -428,17 +427,17 @@ function validatePercentages() {
 
     const sumPct = largePct + smallPct + foreignPct + bondPct;
     const table  = document.getElementById('fundTable');
-    const errorMsg = document.getElementById('errorMessage');
-    const calculateBtn = document.getElementById('calculateBtn');
+    const errorMsg     = document.getElementById('errorMessage');
+    const errorSection = document.getElementById('errorSection');
 
     if (sumPct !== 100) {
         table.classList.add('error');
         errorMsg.textContent = `⚠ Allocations sum to ${sumPct}% — must equal 100%`;
-        calculateBtn.disabled = true;
+        errorSection.style.display = 'block';
     } else {
         table.classList.remove('error');
         errorMsg.textContent = '';
-        calculateBtn.disabled = false;
+        errorSection.style.display = 'none';
     }
 }
 
@@ -452,13 +451,16 @@ function calculateGroup1() {
 
     const foreignDollarVal = total * foreignPct / 100;
     const bondDollarVal    = total * bondPct    / 100;
-    const errorMsg = document.getElementById('errorMessage');
+    const errorMsg     = document.getElementById('errorMessage');
+    const errorSection = document.getElementById('errorSection');
 
     if (foreignDollarVal + bondDollarVal > group1) {
         errorMsg.textContent = '⚠ Cannot rebalance entirely within Group 1';
+        errorSection.style.display = 'block';
         return;
     } else {
         errorMsg.textContent = '';
+        errorSection.style.display = 'none';
     }
 
     const remaining      = group1 - (foreignDollarVal + bondDollarVal);
