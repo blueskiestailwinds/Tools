@@ -897,13 +897,20 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
         });
         // Touch painting — listeners stay on the stable cal card element
         const cal = container.querySelector('.m-cal-card');
+        let tapStartX, tapStartY;
         cal.addEventListener('touchstart', e => {
+            tapStartX = e.changedTouches[0].clientX;
+            tapStartY = e.changedTouches[0].clientY;
+        }, { passive: true });
+        cal.addEventListener('touchend', e => {
             const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - tapStartX);
+            const dy = Math.abs(t.clientY - tapStartY);
+            if (dx > 10 || dy > 10) return; // was a drag, not a tap
             const info = getDayFromPoint(t.clientX, t.clientY);
-            if (info) {paintDay(info.mIdx, info.dIdx); e.preventDefault(); }
-        }, { passive:false });
-        cal.addEventListener('touchend', () => endStroke());
-        cal.addEventListener('touchcancel', () => endStroke());
+            if (info) { paintDay(info.mIdx, info.dIdx); endStroke(); }
+        });
+        cal.addEventListener('touchcancel', () => {});
     }
 }
 
