@@ -1,1 +1,299 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>401(k) Group 1 Rebalancer</title>
+<style>
+  /* Dark Mode Colors */
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #121212;
+    color: #e0e0e0;
+    text-align: center;
+  }
 
+  h1 { color: #ffffff; }
+  .card {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    max-width: 700px;
+    margin: auto;
+    text-align: left;
+  }
+
+  h2 { 
+    margin-top: 30px;
+    border-bottom: 2px solid #2196f3;
+    padding-bottom: 5px;
+    color: #ffffff;
+    text-align: left; /* Fund Targets header left-justified */
+  }
+
+    .inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    }
+
+    .inputs div {
+    display: grid;
+    grid-template-columns: max-content 150px;
+    column-gap: 10px;
+    align-items: center;
+    }
+
+    .inputs label {
+    display: inline-block;
+    width: 300px;      /* fits longest label */
+    font-weight: bold;
+    text-align: right;
+    margin-right: 10px;
+    }
+
+
+  /* Bigger fonts for readability */
+  input[type="number"], input[type="text"] {
+    padding: 8px; 
+    border-radius: 6px; 
+    border: 1px solid #555; 
+    text-align: center; 
+    width: 150px;
+    font-weight: bold; 
+    background: #2c2c2c; 
+    color: #ffffff;
+    font-size: 1.1rem;
+  }
+
+  table td {
+    font-size: 1.1rem;
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    cursor: pointer;
+    background: #2196f3;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: 0.2s;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  button:hover:enabled { background: #1769aa; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+  button:disabled { background: #555; cursor: not-allowed; }
+
+  .errorMessage { color: #ff5555; font-weight: bold; margin-top: 10px; text-align: center; font-size: 1.1rem; }
+
+  #fundTable {
+    border-collapse: separate;   /* changed */
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 20px auto;
+    color: #e0e0e0;
+    width: auto;
+    min-width: 400px;
+  }
+  #fundTable th,
+  #fundTable td {
+    border: 1px solid #555;
+    padding: 10px;
+    text-align: center;
+    border-radius: 0;            /* important */
+  }
+  th {
+    background: #2196f3;
+    color: white;
+  }
+  /* Rounded table corners (only outer cells) */
+  #fundTable thead tr th:first-child {
+    border-top-left-radius: 12px;
+  }
+  
+  #fundTable thead tr th:last-child {
+    border-top-right-radius: 12px;
+  }
+  
+  #fundTable tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 12px;
+  }
+  
+  #fundTable tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 12px;
+  }
+
+  tbody tr:nth-child(odd) { background: #2c2c2c; }
+  tbody tr:nth-child(even) { background: #1f1f1f; }
+  tbody tr:hover { background: #3333aa44; } /* subtle hover highlight */
+
+  .error th { background: #e53935; } /* red header if invalid */
+
+  @media (max-width: 600px) {
+    .inputs { align-items: center; }
+    label { width: 100%; text-align: right; margin-right: 10px; }
+    input { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<h1>401(k) Group 1 Rebalancer</h1>
+
+<div class="card">
+  <h2>Portfolio Inputs</h2>
+  <div class="inputs">
+    <div>
+      <label for="totalPortfolio">Total Retirement Portfolio:</label>
+      <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this)">
+    </div>
+    <div>
+      <label for="compContrib">Company Contributions:</label>
+      <input type="text" id="compContrib" value="0" oninput="formatNumber(this)">
+    </div>
+    <div>
+      <label for="pretax">401(K) Pre-Tax:</label>
+      <input type="text" id="pretax" value="0" oninput="formatNumber(this)">
+    </div>
+  </div>
+
+  <h2>Fund Targets</h2>
+  <table id="fundTable">
+    <thead>
+      <tr>
+        <th>Fund</th>
+        <th>Target Allocation %</th>
+        <th>Group 1 %</th>
+        <th>Group 1 $</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>NON-US STOCK INDEX</td>
+        <td><input type="number" id="foreignPct" value="20" oninput="validatePercentages()"></td>
+        <td id="foreignG1">-</td>
+        <td id="foreignDollar">-</td>
+      </tr>
+      <tr>
+        <td>S&P 500 INDEX </td>
+        <td><input type="number" id="largePct" value="56" oninput="validatePercentages()"></td>
+        <td id="largeG1">-</td>
+        <td id="largeDollar">-</td>
+      </tr>
+      <tr>
+        <td>US SMALL/MID INDEX</td>
+        <td><input type="number" id="smallPct" value="14" oninput="validatePercentages()"></td>
+        <td id="smallG1">-</td>
+        <td id="smallDollar">-</td>
+      </tr>
+
+      <tr>
+        <td>DIVERSIFIED BOND FD</td>
+        <td><input type="number" id="bondPct" value="10" oninput="validatePercentages()"></td>
+        <td id="bondG1">-</td>
+        <td id="bondDollar">-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="errorMessage" id="errorMessage"></div>
+  <button id="calculateBtn" onclick="calculateGroup1()">Calculate Group 1 Targets</button>
+</div>
+
+<script>
+// Format input with commas
+function formatNumber(input) {
+  const value = input.value.replace(/,/g, '');
+  if(!isNaN(value) && value !== '') {
+    input.value = parseFloat(value).toLocaleString('en-US');
+  } else {
+    input.value = '';
+  }
+}
+
+// Convert comma-formatted string to number
+function parseInput(id) {
+  return parseFloat(document.getElementById(id).value.replace(/,/g, '')) || 0;
+}
+
+// Real-time percentage validation
+function validatePercentages() {
+  const largePct = parseFloat(document.getElementById('largePct').value) || 0;
+  const smallPct = parseFloat(document.getElementById('smallPct').value) || 0;
+  const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
+  const bondPct = parseFloat(document.getElementById('bondPct').value) || 0;
+
+  const sumPct = largePct + smallPct + foreignPct + bondPct;
+  const table = document.getElementById('fundTable');
+  const errorMsg = document.getElementById('errorMessage');
+  const calculateBtn = document.getElementById('calculateBtn');
+
+  if (sumPct !== 100) {
+    table.classList.add('error');
+    errorMsg.textContent = `⚠ Whole-portfolio percentages sum to ${sumPct}%. They must sum to exactly 100%.`;
+    calculateBtn.disabled = true;
+  } else {
+    table.classList.remove('error');
+    errorMsg.textContent = "";
+    calculateBtn.disabled = false;
+  }
+}
+
+
+// Calculate Group 1 percentages and dollars
+function calculateGroup1() {
+  const total = parseInput('totalPortfolio');
+  const group1 = parseInput('compContrib') + parseInput('pretax');
+  const largePct = parseFloat(document.getElementById('largePct').value) || 0;
+  const smallPct = parseFloat(document.getElementById('smallPct').value) || 0;
+  const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
+  const bondPct = parseFloat(document.getElementById('bondPct').value) || 0;
+
+  const foreignDollarVal = total * foreignPct / 100;
+  const bondDollarVal = total * bondPct / 100;
+  const errorMsg = document.getElementById('errorMessage');
+
+  // CHECK: Group 1 must be large enough
+  if (foreignDollarVal + bondDollarVal > group1) {
+    errorMsg.textContent = "Cannot rebalance entirely within Group 1";
+    return; // stop calculation
+  } else {
+    errorMsg.textContent = ""; // clear previous error
+  }
+
+  const remaining = group1 - (foreignDollarVal + bondDollarVal);
+  const totalLargeSmall = largePct + smallPct;
+  const largeDollarVal = remaining * (largePct / totalLargeSmall);
+  const smallDollarVal = remaining * (smallPct / totalLargeSmall);
+
+  const largePctG1 = (largeDollarVal / group1 * 100).toFixed(2);
+  const smallPctG1 = (smallDollarVal / group1 * 100).toFixed(2);
+  const foreignPctG1 = (foreignDollarVal / group1 * 100).toFixed(2);
+  const bondPctG1 = (bondDollarVal / group1 * 100).toFixed(2);
+
+  document.getElementById('largeG1').innerText = `${largePctG1}%`;
+  document.getElementById('smallG1').innerText = `${smallPctG1}%`;
+  document.getElementById('foreignG1').innerText = `${foreignPctG1}%`;
+  document.getElementById('bondG1').innerText = `${bondPctG1}%`;
+
+  // Round Group 1 $ to nearest dollar
+  document.getElementById('largeDollar').innerText = Math.round(largeDollarVal).toLocaleString('en-US');
+  document.getElementById('smallDollar').innerText = Math.round(smallDollarVal).toLocaleString('en-US');
+  document.getElementById('foreignDollar').innerText = Math.round(foreignDollarVal).toLocaleString('en-US');
+  document.getElementById('bondDollar').innerText = Math.round(bondDollarVal).toLocaleString('en-US');
+}
+
+
+
+// Run validation on load
+validatePercentages();
+</script>
+
+</body>
+</html>
