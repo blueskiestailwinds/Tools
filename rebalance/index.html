@@ -454,6 +454,13 @@ function calculateGroup1() {
     const errorMsg     = document.getElementById('errorMessage');
     const errorSection = document.getElementById('errorSection');
 
+    // Don't run if percentages are invalid — validatePercentages already showed the error
+    const largePct2   = parseFloat(document.getElementById('largePct').value)   || 0;
+    const smallPct2   = parseFloat(document.getElementById('smallPct').value)   || 0;
+    const foreignPct2 = parseFloat(document.getElementById('foreignPct').value) || 0;
+    const bondPct2    = parseFloat(document.getElementById('bondPct').value)    || 0;
+    if (largePct2 + smallPct2 + foreignPct2 + bondPct2 !== 100) return;
+
     if (foreignDollarVal + bondDollarVal > group1) {
         errorMsg.textContent = '⚠ Cannot rebalance entirely within Group 1';
         errorSection.style.display = 'block';
@@ -476,8 +483,10 @@ function calculateGroup1() {
     const setResult = (pctId, dolId, pct, dol) => {
         const pctEl = document.getElementById(pctId);
         const dolEl = document.getElementById(dolId);
-        pctEl.textContent = `${pct}%`;
-        dolEl.textContent = `$${Math.round(dol).toLocaleString('en-US')}`;
+        const pctNum = parseFloat(pct);
+        const dolNum = parseFloat(dol);
+        pctEl.textContent = isNaN(pctNum) ? '—' : `${pct}%`;
+        dolEl.textContent = (isNaN(dolNum) || group1 === 0) ? '—' : `$${Math.round(dol).toLocaleString('en-US')}`;
         pctEl.classList.remove('result-placeholder');
         dolEl.classList.remove('result-placeholder');
     };
