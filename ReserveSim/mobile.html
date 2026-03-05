@@ -650,7 +650,7 @@ function init() {
 
     BID_MONTHS.forEach((m, i) => {
         monthData[i] = global[m.id] || {
-            days: Array(m.dayCount).fill('R'),
+            days: Array(m.dayCount).fill('X'),
             settings: { minW:4, maxW:99, maxX:4, alv:'cat1', extraX:false }
         };
         if (today >= m.start && today <= m.end) currentIdx = i;
