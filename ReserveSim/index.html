@@ -900,23 +900,10 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
         cal.addEventListener('touchstart', e => {
             const t = e.changedTouches[0];
             const info = getDayFromPoint(t.clientX, t.clientY);
-            if (info) { isPainting=true; paintDay(info.mIdx, info.dIdx); e.preventDefault(); }
+            if (info) {paintDay(info.mIdx, info.dIdx); e.preventDefault(); }
         }, { passive:false });
-        cal.addEventListener('touchmove', e => {
-            if (!isPainting) return;
-            const t = e.changedTouches[0];
-            const info = getDayFromPoint(t.clientX, t.clientY);
-            if (info) paintDay(info.mIdx, info.dIdx);
-            e.preventDefault();
-        }, { passive:false });
-        cal.addEventListener('touchend', () => {
-            isPainting = false;
-            endStroke(); // validate + save once when finger lifts
-        });
-        cal.addEventListener('touchcancel', () => {
-            isPainting = false;
-            endStroke();
-        });
+        cal.addEventListener('touchend', () => endStroke());
+        cal.addEventListener('touchcancel', () => endStroke());
     }
 }
 
