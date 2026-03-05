@@ -935,7 +935,17 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
 function initDesktopMousePainting() {
     document.addEventListener('mousedown', e => {
         const dayEl = e.target.closest && e.target.closest('.d-calendar-grid .day[data-didx]');
-        if (dayEl && e.button === 0) {
+        if (!dayEl) return;
+        if (e.button === 2) {
+            const mIdx = parseInt(dayEl.dataset.midx);
+            const dIdx = parseInt(dayEl.dataset.didx);
+            monthData[mIdx].days[dIdx] = monthData[mIdx].days[dIdx] === 'X' ? 'R' : 'X';
+            save();
+            validateAll();
+            e.preventDefault();
+            return;
+        }
+        if (e.button === 0) {
             isPainting = true;
             paintDay(parseInt(dayEl.dataset.midx), parseInt(dayEl.dataset.didx));
             e.preventDefault();
@@ -947,6 +957,11 @@ function initDesktopMousePainting() {
         if (dayEl) paintDay(parseInt(dayEl.dataset.midx), parseInt(dayEl.dataset.didx));
     });
     document.addEventListener('mouseup', () => { isPainting = false; });
+    document.addEventListener('contextmenu', e => {
+        if (e.target.closest && e.target.closest('.d-calendar-grid .day[data-didx]')) {
+            e.preventDefault();
+        }
+    });
 }
 
 
