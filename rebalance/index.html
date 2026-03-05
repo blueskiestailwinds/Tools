@@ -1,297 +1,491 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>401(k) Group 1 Rebalancer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Dark Mode Colors */
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #121212;
-    color: #e0e0e0;
-    text-align: center;
-  }
-
-  h1 { color: #ffffff; }
-  .card {
-    background: #1e1e1e;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    max-width: 700px;
-    margin: auto;
-    text-align: left;
-  }
-
-  h2 { 
-    margin-top: 30px;
-    border-bottom: 2px solid #2196f3;
-    padding-bottom: 5px;
-    color: #ffffff;
-    text-align: left; /* Fund Targets header left-justified */
-  }
-
-    .inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    :root {
+        --bg:        #0a0a0f;
+        --surface:   #111118;
+        --surface2:  #18181f;
+        --border:    rgba(255,255,255,0.07);
+        --text:      #f0f0f5;
+        --muted:     #5a5a72;
+        --dim:       #3a3a50;
+        --green:     #00e5b0;
+        --red:       #ff4757;
+        --red-dim:   rgba(255,71,87,0.08);
+        --accent:    #7c6af7;
+        --accent-dim: rgba(124,106,247,0.12);
+        --accent-border: rgba(124,106,247,0.35);
     }
 
-    .inputs div {
-    display: grid;
-    grid-template-columns: max-content 150px;
-    column-gap: 10px;
-    align-items: center;
+    html { font-size: 22px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Syne', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 32px 24px;
+        background-image:
+            linear-gradient(rgba(124,106,247,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(124,106,247,0.025) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
 
-    .inputs label {
-    display: inline-block;
-    width: 300px;      /* fits longest label */
-    font-weight: bold;
-    text-align: right;
-    margin-right: 10px;
+    /* ── HEADER ── */
+    header {
+        max-width: 780px;
+        margin: 0 auto 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
 
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-  /* Bigger fonts for readability */
-  input[type="number"], input[type="text"] {
-    padding: 8px; 
-    border-radius: 6px; 
-    border: 1px solid #555; 
-    text-align: center; 
-    width: 150px;
-    font-weight: bold; 
-    background: #2c2c2c; 
-    color: #ffffff;
-    font-size: 1.1rem;
-  }
+    .logo-mark {
+        width: 34px; height: 34px;
+        background: var(--accent);
+        border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.62rem;
+        font-weight: 800;
+        color: white;
+        letter-spacing: -0.3px;
+    }
 
-  table td {
-    font-size: 1.1rem;
-  }
+    .logo-text {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
 
-  button {
-    margin-top: 20px;
-    padding: 12px 24px;
-    cursor: pointer;
-    background: #2196f3;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    transition: 0.2s;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  button:hover:enabled { background: #1769aa; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-  button:disabled { background: #555; cursor: not-allowed; }
+    /* ── CARD ── */
+    .card {
+        max-width: 780px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
 
-  .errorMessage { color: #ff5555; font-weight: bold; margin-top: 10px; text-align: center; font-size: 1.1rem; }
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+    }
 
-  #fundTable {
-    border-collapse: separate;   /* changed */
-    border-spacing: 0;
-    border-radius: 12px;
-    overflow: hidden;
-    margin: 20px auto;
-    color: #e0e0e0;
-    width: auto;
-    min-width: 400px;
-  }
-  #fundTable th,
-  #fundTable td {
-    border: 1px solid #555;
-    padding: 10px;
-    text-align: center;
-    border-radius: 0;            /* important */
-  }
-  th {
-    background: #2196f3;
-    color: white;
-  }
-  /* Rounded table corners (only outer cells) */
-  #fundTable thead tr th:first-child {
-    border-top-left-radius: 12px;
-  }
-  
-  #fundTable thead tr th:last-child {
-    border-top-right-radius: 12px;
-  }
-  
-  #fundTable tbody tr:last-child td:first-child {
-    border-bottom-left-radius: 12px;
-  }
-  
-  #fundTable tbody tr:last-child td:last-child {
-    border-bottom-right-radius: 12px;
-  }
+    .panel-section {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border);
+    }
+    .panel-section:last-child { border-bottom: none; }
 
-  tbody tr:nth-child(odd) { background: #2c2c2c; }
-  tbody tr:nth-child(even) { background: #1f1f1f; }
-  tbody tr:hover { background: #3333aa44; } /* subtle hover highlight */
+    .section-label {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 18px;
+    }
 
-  .error th { background: #e53935; } /* red header if invalid */
+    /* ── INPUT ROWS ── */
+    .input-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
-  @media (max-width: 600px) {
-    .inputs { align-items: center; }
-    label { width: 100%; text-align: right; margin-right: 10px; }
-    input { width: 100%; }
-  }
+    .input-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .input-row label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+    }
+
+    .input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+    }
+
+    .input-wrap:focus-within {
+        border-color: var(--accent-border);
+    }
+
+    .input-prefix {
+        padding: 10px 10px 10px 14px;
+        font-family: 'DM Mono', monospace;
+        font-size: 1rem;
+        color: var(--green);
+        font-weight: 400;
+        line-height: 1;
+        background: transparent;
+        user-select: none;
+    }
+
+    .input-suffix {
+        padding: 10px 14px 10px 4px;
+        font-family: 'DM Mono', monospace;
+        font-size: 1rem;
+        color: var(--muted);
+        background: transparent;
+        user-select: none;
+    }
+
+    input[type="number"], input[type="text"] {
+        font-family: 'DM Mono', monospace;
+        font-size: 1.1rem;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        color: var(--text);
+        background: transparent;
+        border: none;
+        outline: none;
+        padding: 10px 6px;
+        width: 140px;
+        text-align: right;
+    }
+
+    input[type=number] { -moz-appearance: textfield !important; appearance: textfield !important; }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
+
+    /* ── TABLE ── */
+    #fundTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #fundTable thead tr {
+        border-bottom: 1px solid var(--border);
+    }
+
+    #fundTable th {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 0 16px 12px;
+        text-align: right;
+    }
+
+    #fundTable th:first-child { text-align: left; }
+
+    #fundTable tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+    }
+    #fundTable tbody tr:last-child { border-bottom: none; }
+    #fundTable tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    #fundTable td {
+        padding: 12px 16px;
+        font-size: 1.05rem;
+        text-align: right;
+    }
+
+    #fundTable td:first-child {
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.03em;
+        color: var(--text);
+    }
+
+    /* Target % input cell */
+    .pct-cell {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .pct-wrap {
+        display: flex;
+        align-items: center;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+    }
+    .pct-wrap:focus-within { border-color: var(--accent-border); }
+
+    .pct-wrap input[type="number"] {
+        width: 64px;
+        padding: 7px 4px 7px 10px;
+        font-size: 1rem;
+        text-align: right;
+    }
+
+    .pct-wrap .input-suffix {
+        padding: 7px 10px 7px 2px;
+        font-size: 0.95rem;
+    }
+
+    /* Result cells */
+    .result-pct {
+        font-family: 'DM Mono', monospace;
+        font-weight: 500;
+        font-size: 1.05rem;
+        color: var(--accent);
+    }
+
+    .result-dollar {
+        font-family: 'DM Mono', monospace;
+        font-weight: 500;
+        font-size: 1.05rem;
+        color: var(--green);
+    }
+
+    .result-placeholder {
+        color: var(--dim);
+        font-family: 'DM Mono', monospace;
+    }
+
+    /* Error state — red accent on header row */
+    #fundTable.error thead tr {
+        border-bottom-color: rgba(255,71,87,0.4);
+    }
+    #fundTable.error th {
+        color: var(--red);
+    }
+
+    /* ── ERROR MESSAGE ── */
+    .error-message {
+        font-family: 'DM Mono', monospace;
+        font-size: 0.9rem;
+        color: var(--red);
+    }
+
+    /* ── BUTTON ── */
+    .btn-calculate {
+        display: inline-block;
+        flex-shrink: 0;
+        padding: 14px 36px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-family: 'Syne', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-calculate:hover:enabled {
+        background: #9585ff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(124,106,247,0.35);
+    }
+    .btn-calculate:disabled {
+        background: var(--surface2);
+        color: var(--dim);
+        border: 1px solid var(--border);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
 </style>
 </head>
 <body>
 
-<h1>401(k) Group 1 Rebalancer</h1>
+<header>
+    <div class="logo">
+        <div class="logo-mark">401k</div>
+        <span class="logo-text">Group 1 Rebalancer</span>
+    </div>
+</header>
 
 <div class="card">
-  <h2>Portfolio Inputs</h2>
-  <div class="inputs">
-    <div>
-      <label for="totalPortfolio">Total Retirement Portfolio:</label>
-      <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this)">
-    </div>
-    <div>
-      <label for="compContrib">Company Contributions:</label>
-      <input type="text" id="compContrib" value="0" oninput="formatNumber(this)">
-    </div>
-    <div>
-      <label for="pretax">401(K) Pre-Tax:</label>
-      <input type="text" id="pretax" value="0" oninput="formatNumber(this)">
-    </div>
-  </div>
 
-  <h2>Fund Targets</h2>
-  <table id="fundTable">
-    <thead>
-      <tr>
-        <th>Fund</th>
-        <th>Target Allocation %</th>
-        <th>Group 1 %</th>
-        <th>Group 1 $</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>NON-US STOCK INDEX</td>
-        <td><input type="number" id="foreignPct" value="20" oninput="validatePercentages()"></td>
-        <td id="foreignG1">-</td>
-        <td id="foreignDollar">-</td>
-      </tr>
-      <tr>
-        <td>S&P 500 INDEX </td>
-        <td><input type="number" id="largePct" value="56" oninput="validatePercentages()"></td>
-        <td id="largeG1">-</td>
-        <td id="largeDollar">-</td>
-      </tr>
-      <tr>
-        <td>US SMALL/MID INDEX</td>
-        <td><input type="number" id="smallPct" value="14" oninput="validatePercentages()"></td>
-        <td id="smallG1">-</td>
-        <td id="smallDollar">-</td>
-      </tr>
+    <!-- Portfolio Inputs -->
+    <div class="panel">
+        <div class="panel-section">
+            <div class="input-rows">
+                <div class="input-row">
+                    <label for="totalPortfolio">Total Retirement Portfolio</label>
+                    <div class="input-wrap">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this)">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <label for="compContrib">Company Contributions</label>
+                    <div class="input-wrap">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="compContrib" value="0" oninput="formatNumber(this)">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <label for="pretax">401(k) Pre-Tax</label>
+                    <div class="input-wrap">
+                        <span class="input-prefix">$</span>
+                        <input type="text" id="pretax" value="0" oninput="formatNumber(this)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-      <tr>
-        <td>DIVERSIFIED BOND FD</td>
-        <td><input type="number" id="bondPct" value="10" oninput="validatePercentages()"></td>
-        <td id="bondG1">-</td>
-        <td id="bondDollar">-</td>
-      </tr>
-    </tbody>
-  </table>
+    <!-- Fund Targets -->
+    <div class="panel">
+        <div class="panel-section">
+            <div class="section-label">Fund Targets</div>
+            <table id="fundTable">
+                <thead>
+                    <tr>
+                        <th>Fund</th>
+                        <th>Target %</th>
+                        <th>Group 1 %</th>
+                        <th>Group 1 $</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Non-US Stock Index</td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="foreignPct" value="20" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td class="result-pct result-placeholder" id="foreignG1">—</td>
+                        <td class="result-dollar result-placeholder" id="foreignDollar">—</td>
+                    </tr>
+                    <tr>
+                        <td>S&amp;P 500 Index</td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="largePct" value="56" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td class="result-pct result-placeholder" id="largeG1">—</td>
+                        <td class="result-dollar result-placeholder" id="largeDollar">—</td>
+                    </tr>
+                    <tr>
+                        <td>US Small/Mid Index</td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="smallPct" value="14" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td class="result-pct result-placeholder" id="smallG1">—</td>
+                        <td class="result-dollar result-placeholder" id="smallDollar">—</td>
+                    </tr>
+                    <tr>
+                        <td>Diversified Bond Fund</td>
+                        <td><div class="pct-cell"><div class="pct-wrap"><input type="number" id="bondPct" value="10" oninput="validatePercentages()"><span class="input-suffix">%</span></div></div></td>
+                        <td class="result-pct result-placeholder" id="bondG1">—</td>
+                        <td class="result-dollar result-placeholder" id="bondDollar">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-  <div class="errorMessage" id="errorMessage"></div>
-  <button id="calculateBtn" onclick="calculateGroup1()">Calculate Group 1 Targets</button>
+        <div class="panel-section" style="display:flex; align-items:center; justify-content:center; gap:16px;">
+            <div class="error-message" id="errorMessage"></div>
+            <button class="btn-calculate" id="calculateBtn" onclick="calculateGroup1()">Calculate Group 1 Targets</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
-// Format input with commas
 function formatNumber(input) {
-  const value = input.value.replace(/,/g, '');
-  if(!isNaN(value) && value !== '') {
-    input.value = parseFloat(value).toLocaleString('en-US');
-  } else {
-    input.value = '';
-  }
+    const value = input.value.replace(/,/g, '');
+    if (!isNaN(value) && value !== '') {
+        input.value = parseFloat(value).toLocaleString('en-US');
+    } else {
+        input.value = '';
+    }
 }
 
-// Convert comma-formatted string to number
 function parseInput(id) {
-  return parseFloat(document.getElementById(id).value.replace(/,/g, '')) || 0;
+    return parseFloat(document.getElementById(id).value.replace(/,/g, '')) || 0;
 }
 
-// Real-time percentage validation
 function validatePercentages() {
-  const largePct = parseFloat(document.getElementById('largePct').value) || 0;
-  const smallPct = parseFloat(document.getElementById('smallPct').value) || 0;
-  const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
-  const bondPct = parseFloat(document.getElementById('bondPct').value) || 0;
+    const largePct   = parseFloat(document.getElementById('largePct').value)   || 0;
+    const smallPct   = parseFloat(document.getElementById('smallPct').value)   || 0;
+    const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
+    const bondPct    = parseFloat(document.getElementById('bondPct').value)    || 0;
 
-  const sumPct = largePct + smallPct + foreignPct + bondPct;
-  const table = document.getElementById('fundTable');
-  const errorMsg = document.getElementById('errorMessage');
-  const calculateBtn = document.getElementById('calculateBtn');
+    const sumPct = largePct + smallPct + foreignPct + bondPct;
+    const table  = document.getElementById('fundTable');
+    const errorMsg = document.getElementById('errorMessage');
+    const calculateBtn = document.getElementById('calculateBtn');
 
-  if (sumPct !== 100) {
-    table.classList.add('error');
-    errorMsg.textContent = `⚠ Whole-portfolio percentages sum to ${sumPct}%. They must sum to exactly 100%.`;
-    calculateBtn.disabled = true;
-  } else {
-    table.classList.remove('error');
-    errorMsg.textContent = "";
-    calculateBtn.disabled = false;
-  }
+    if (sumPct !== 100) {
+        table.classList.add('error');
+        errorMsg.textContent = `⚠ Allocations sum to ${sumPct}% — must equal 100%`;
+        calculateBtn.disabled = true;
+    } else {
+        table.classList.remove('error');
+        errorMsg.textContent = '';
+        calculateBtn.disabled = false;
+    }
 }
 
-
-// Calculate Group 1 percentages and dollars
 function calculateGroup1() {
-  const total = parseInput('totalPortfolio');
-  const group1 = parseInput('compContrib') + parseInput('pretax');
-  const largePct = parseFloat(document.getElementById('largePct').value) || 0;
-  const smallPct = parseFloat(document.getElementById('smallPct').value) || 0;
-  const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
-  const bondPct = parseFloat(document.getElementById('bondPct').value) || 0;
+    const total      = parseInput('totalPortfolio');
+    const group1     = parseInput('compContrib') + parseInput('pretax');
+    const largePct   = parseFloat(document.getElementById('largePct').value)   || 0;
+    const smallPct   = parseFloat(document.getElementById('smallPct').value)   || 0;
+    const foreignPct = parseFloat(document.getElementById('foreignPct').value) || 0;
+    const bondPct    = parseFloat(document.getElementById('bondPct').value)    || 0;
 
-  const foreignDollarVal = total * foreignPct / 100;
-  const bondDollarVal = total * bondPct / 100;
-  const errorMsg = document.getElementById('errorMessage');
+    const foreignDollarVal = total * foreignPct / 100;
+    const bondDollarVal    = total * bondPct    / 100;
+    const errorMsg = document.getElementById('errorMessage');
 
-  // CHECK: Group 1 must be large enough
-  if (foreignDollarVal + bondDollarVal > group1) {
-    errorMsg.textContent = "Cannot rebalance entirely within Group 1";
-    return; // stop calculation
-  } else {
-    errorMsg.textContent = ""; // clear previous error
-  }
+    if (foreignDollarVal + bondDollarVal > group1) {
+        errorMsg.textContent = '⚠ Cannot rebalance entirely within Group 1';
+        return;
+    } else {
+        errorMsg.textContent = '';
+    }
 
-  const remaining = group1 - (foreignDollarVal + bondDollarVal);
-  const totalLargeSmall = largePct + smallPct;
-  const largeDollarVal = remaining * (largePct / totalLargeSmall);
-  const smallDollarVal = remaining * (smallPct / totalLargeSmall);
+    const remaining      = group1 - (foreignDollarVal + bondDollarVal);
+    const totalLargeSmall = largePct + smallPct;
+    const largeDollarVal  = remaining * (largePct  / totalLargeSmall);
+    const smallDollarVal  = remaining * (smallPct  / totalLargeSmall);
 
-  const largePctG1 = (largeDollarVal / group1 * 100).toFixed(2);
-  const smallPctG1 = (smallDollarVal / group1 * 100).toFixed(2);
-  const foreignPctG1 = (foreignDollarVal / group1 * 100).toFixed(2);
-  const bondPctG1 = (bondDollarVal / group1 * 100).toFixed(2);
+    const largePctG1   = (largeDollarVal   / group1 * 100).toFixed(2);
+    const smallPctG1   = (smallDollarVal   / group1 * 100).toFixed(2);
+    const foreignPctG1 = (foreignDollarVal / group1 * 100).toFixed(2);
+    const bondPctG1    = (bondDollarVal    / group1 * 100).toFixed(2);
 
-  document.getElementById('largeG1').innerText = `${largePctG1}%`;
-  document.getElementById('smallG1').innerText = `${smallPctG1}%`;
-  document.getElementById('foreignG1').innerText = `${foreignPctG1}%`;
-  document.getElementById('bondG1').innerText = `${bondPctG1}%`;
+    const setResult = (pctId, dolId, pct, dol) => {
+        const pctEl = document.getElementById(pctId);
+        const dolEl = document.getElementById(dolId);
+        pctEl.textContent = `${pct}%`;
+        dolEl.textContent = `$${Math.round(dol).toLocaleString('en-US')}`;
+        pctEl.classList.remove('result-placeholder');
+        dolEl.classList.remove('result-placeholder');
+    };
 
-  // Round Group 1 $ to nearest dollar
-  document.getElementById('largeDollar').innerText = Math.round(largeDollarVal).toLocaleString('en-US');
-  document.getElementById('smallDollar').innerText = Math.round(smallDollarVal).toLocaleString('en-US');
-  document.getElementById('foreignDollar').innerText = Math.round(foreignDollarVal).toLocaleString('en-US');
-  document.getElementById('bondDollar').innerText = Math.round(bondDollarVal).toLocaleString('en-US');
+    setResult('largeG1',   'largeDollar',   largePctG1,   largeDollarVal);
+    setResult('smallG1',   'smallDollar',   smallPctG1,   smallDollarVal);
+    setResult('foreignG1', 'foreignDollar', foreignPctG1, foreignDollarVal);
+    setResult('bondG1',    'bondDollar',    bondPctG1,    bondDollarVal);
 }
 
-
-
-// Run validation on load
 validatePercentages();
 </script>
 
