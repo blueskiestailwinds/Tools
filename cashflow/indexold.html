@@ -41,6 +41,7 @@
 
         h2 { margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
         
+        /* --- NEW STARTING BALANCE STYLES --- */
         .balance-hero {
             position: relative;
             margin-bottom: 30px;
@@ -98,6 +99,7 @@
             margin-top: 8px;
             display: block;
         }
+        /* ----------------------------------- */
 
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 1rem; }
         th { text-align: left; border-bottom: 1px solid var(--border); padding: 5px; color: var(--text-dim); font-size: 0.8rem; }
@@ -185,18 +187,18 @@
 
 <script>
     const defaultEvents = [
-        { day: 15,  amt: 8000, desc: "Mid-month Pay",      type: 'credit' },
-        { day: 99,  amt: 6000, desc: "End-of-month Pay",   type: 'credit', lastDay: true },
-        { day: 1,   amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
-        { day: 9,   amt: 200,  desc: "Verizon",            type: 'debit' },
-        { day: 16,  amt: 1500, desc: "Amex",               type: 'debit' },
-        { day: 16,  amt: 2313, desc: "Mortgage",           type: 'debit' }
+        { day: 15, amt: 8000, desc: "Mid-month Pay", type: 'credit' },
+        { day: 30, amt: 6000, desc: "End-of-month Pay", type: 'credit' },
+        { day: 1,  amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
+        { day: 9,  amt: 200,  desc: "Verizon", type: 'debit' },
+        { day: 16, amt: 1500, desc: "Amex", type: 'debit' },
+        { day: 16, amt: 2313, desc: "Mortgage", type: 'debit' }
     ];
 
     let events = [];
 
     function init() {
-        const rawStored = JSON.parse(localStorage.getItem('cf_events'));
+        let rawStored = JSON.parse(localStorage.getItem('cf_events'));
         events = rawStored || defaultEvents;
         document.getElementById('startBalance').value = localStorage.getItem('cf_startBalance') || 2500;
         saveAndRefresh();
@@ -210,7 +212,7 @@
     }
 
     function resetDefaults() {
-        if (confirm("Wipe all data and restore defaults?")) {
+        if(confirm("Wipe all data and restore defaults?")) {
             localStorage.removeItem('cf_events');
             localStorage.removeItem('cf_startBalance');
             location.reload();
@@ -228,20 +230,12 @@
 
     function renderTable() {
         const body = document.getElementById('eventBody');
-        const sorted = [...events].sort((a, b) => {
-            // lastDay events sort to the end
-            if (a.lastDay && !b.lastDay) return 1;
-            if (!a.lastDay && b.lastDay) return -1;
-            return a.day - b.day;
-        });
-
-        let rows = '';
-        sorted.forEach((ev, idx) => {
+        body.innerHTML = '';
+        events.sort((a, b) => a.day - b.day).forEach((ev, idx) => {
             const isCredit = ev.type === 'credit';
-            const dayDisplay = ev.lastDay ? 'Last' : ev.day;
-            rows += `
+            body.innerHTML += `
                 <tr>
-                    <td><div class="editable" style="cursor: default; color: var(--text-dim);">${dayDisplay}</div></td>
+                    <td><div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'day', this.innerText)">${ev.day}</div></td>
                     <td><div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'desc', this.innerText)">${ev.desc}</div></td>
                     <td style="text-align: right; color: var(--accent); font-weight: bold;">
                         ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt}</div>` : ''}
@@ -253,18 +247,17 @@
                 </tr>
             `;
         });
-        body.innerHTML = rows;
-
+        
         const income = events.filter(e => e.type === 'credit').reduce((s, e) => s + e.amt, 0);
-        const bills  = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
+        const bills = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
         document.getElementById('totalIncome').innerText = `Monthly Credits: $${income.toLocaleString()}`;
         document.getElementById('totalDebits').innerText = `Monthly Debits: $${bills.toLocaleString()}`;
     }
 
     function editEvent(index, field, value) {
-        if (field === 'day')  events[index].day  = parseInt(value) || 1;
+        if (field === 'day') events[index].day = parseInt(value) || 1;
         if (field === 'desc') events[index].desc = value;
-        if (field === 'amt')  events[index].amt  = Math.abs(parseFloat(value.replace(/[^0-9.-]+/g, ""))) || 0;
+        if (field === 'amt') events[index].amt = Math.abs(parseFloat(value.replace(/[^0-9.-]+/g,""))) || 0;
         saveAndRefresh();
     }
 
@@ -286,11 +279,8 @@
             const date = new Date(today);
             date.setDate(today.getDate() + i);
 
-            const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-
             events.forEach(ev => {
-                const effectiveDay = ev.lastDay ? lastDayOfMonth : ev.day;
-                if (date.getDate() === effectiveDay) {
+                if (date.getDate() === ev.day) {
                     currentBalance += (ev.type === 'credit' ? ev.amt : -ev.amt);
                 }
             });
@@ -301,7 +291,6 @@
 
         renderChart(labels, data);
     }
-
     function renderChart(labels, data) {
         const ctx = document.getElementById('cashFlowChart').getContext('2d');
         if (chart) chart.destroy();
@@ -333,7 +322,7 @@
                         time: { unit: 'day', displayFormats: { day: 'MMM d' } },
                         ticks: { 
                             color: '#b0b0b0', 
-                            font: { size: 14, weight: 'bold' }
+                            font: { size: 14, weight: 'bold' } // Restored size
                         },
                         grid: { display: false }
                     },
@@ -342,14 +331,14 @@
                         max: dataMax,
                         afterBuildTicks: axis => {
                             const currentTicks = axis.ticks.map(t => t.value);
-                            if (!currentTicks.includes(0))    axis.ticks.push({ value: 0 });
-                            if (!currentTicks.includes(1000)) axis.ticks.push({ value: 1000 });
-                            axis.ticks.sort((a, b) => a.value - b.value);
+                            if (!currentTicks.includes(0)) axis.ticks.push({value: 0});
+                            if (!currentTicks.includes(1000)) axis.ticks.push({value: 1000});
+                            axis.ticks.sort((a,b) => a.value - b.value);
                         },
                         ticks: { 
-                            font: { size: 14, weight: 'bold' },
+                            font: { size: 14, weight: 'bold' }, // Restored size
                             color: (context) => {
-                                if (context.tick.value === 0)    return '#ff3d00';
+                                if (context.tick.value === 0) return '#ff3d00';
                                 if (context.tick.value === 1000) return '#ffeb3b';
                                 return '#b0b0b0';
                             },
@@ -357,7 +346,7 @@
                         },
                         grid: { 
                             color: (context) => {
-                                if (context.tick.value === 0)    return '#ff3d00'; 
+                                if (context.tick.value === 0) return '#ff3d00'; 
                                 if (context.tick.value === 1000) return '#ffeb3b';
                                 return 'rgba(255,255,255,0.05)';
                             },
@@ -396,7 +385,6 @@
             }
         });
     }
-
     init();
 </script>
 </body>
