@@ -393,11 +393,11 @@
                     </select>
                 </div>
                 <div class="stat-row"><span>Min Work:</span><input type="number" id="cfg-min-w" class="num-input"
-                        value="5" min="1" max="20" onchange="validateAll()"></div>
+                        value="5" onchange="validateAll()"></div>
                 <div class="stat-row"><span>Max Work:</span><input type="number" id="cfg-max-w" class="num-input"
-                        value="5" min="1" max="99" onchange="validateAll()"></div>
+                        value="5" onchange="validateAll()"></div>
                 <div class="stat-row"><span>Max X Blks:</span><input type="number" id="cfg-max-x-blks" class="num-input"
-                        value="5" min="0" max="10" onchange="validateAll()"></div>
+                        value="5" onchange="validateAll()"></div>
                 <div style="margin-top:10px; font-size: 0.85rem;">
                     <input type="checkbox" id="extra-x" onchange="validateAll()"> <label for="extra-x">Extra X
                         Day</label>
@@ -487,6 +487,7 @@
 
         function handleModeChange() {
             const isPCS = document.getElementById('mode-switch').checked;
+
             // I'm ready for your logic here!
             validateAll();
         }
@@ -541,14 +542,10 @@
             changeFocusMonth(currentIdx);
         }
 
-        let saveTimer;
         function save() {
-            clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => {
-                const dataToSave = {};
-                BID_MONTHS.forEach((m, i) => { dataToSave[m.id] = monthData[i]; });
-                localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
-            }, 300);
+            const dataToSave = {};
+            BID_MONTHS.forEach((m, i) => { dataToSave[m.id] = monthData[i]; });
+            localStorage.setItem(STORE_KEY, JSON.stringify(dataToSave));
         }
 
         function changeFocusMonth(idx) {
