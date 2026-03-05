@@ -1,1 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow Forecast</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-dim: #b0b0b0;
+            --accent: #4db6ac;
+            --danger: #ff3d00;
+            --warning: #ffeb3b;
+            --border: #333333;
+            --input-bg: #2c2c2c;
+        }
 
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; padding: 28px; 
+            color: var(--text-main); 
+        }
+
+        .container { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 480px 1fr; gap: 20px; }
+        
+        .panel { 
+            background: var(--panel-bg); 
+            padding: 24px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 { margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
+        
+        /* --- NEW STARTING BALANCE STYLES --- */
+        .balance-hero {
+            position: relative;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+        }
+
+        .currency-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .currency-symbol {
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--accent);
+        }
+
+        #startBalance { 
+            width: 100%;
+            background: transparent; 
+            border: none; 
+            border-bottom: 2px solid var(--border);
+            border-radius: 0;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            padding: 0;
+            outline: none;
+            transition: all 0.3s ease;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #startBalance:focus { 
+            border-color: var(--accent);
+            text-shadow: 0 0 15px rgba(77, 182, 172, 0.3);
+        }
+
+        /* Specific fix for Firefox */
+        input[type=number] {
+            -moz-appearance: textfield !important;
+            appearance: textfield !important;
+        }
+        
+        /* Specific fix for Chrome/Safari/Edge */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+
+        .balance-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+            display: block;
+        }
+        /* ----------------------------------- */
+
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 1rem; }
+        th { text-align: left; border-bottom: 1px solid var(--border); padding: 5px; color: var(--text-dim); font-size: 0.8rem; }
+        td { padding: 8px 5px; border-bottom: 1px solid var(--border); }
+        
+        .editable {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .editable:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
+        .editable:focus { 
+            background: var(--input-bg); 
+            outline: 2px solid var(--accent); 
+            color: white;
+        }
+
+        .btn-del { color: var(--danger); background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.5; }
+        .btn-del:hover { opacity: 1; }
+        
+        .chart-container { position: relative; height: 550px; }
+        
+        .summary { display: flex; gap: 10px; margin-bottom: 15px; }
+        .stat-card { 
+            flex: 1; padding: 15px; border-radius: 12px; text-align: center; 
+            font-weight: bold; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-income { background-color: rgba(77, 182, 172, 0.1); color: var(--accent); }
+        .stat-bills { background-color: rgba(255, 61, 0, 0.1); color: var(--danger); }
+
+        .btn-reset {
+            margin-top: 30px;
+            background: none;
+            border: 1px solid #444;
+            color: #666;
+            padding: 8px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            align-self: flex-start;
+        }
+        .btn-reset:hover { color: var(--danger); border-color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel">
+        <h2>Starting Balance</h2>
+        <div class="balance-hero">
+            <div class="currency-wrapper">
+                <span class="currency-symbol">$</span>
+                <input type="number" id="startBalance" value="2500" oninput="saveAndRefresh()">
+            </div>
+        </div>
+
+        <h2 style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;">Monthly Recurring</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Description</th>
+                    <th style="text-align: right;">Credit</th>
+                    <th style="text-align: right;">Debit</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="eventBody"></tbody>
+        </table>
+        <button class="btn-reset" onclick="resetDefaults()">Reset to Factory Defaults</button>
+    </div>
+
+    <div class="panel">
+        <div class="summary">
+            <div class="stat-card stat-income" id="totalIncome">Monthly Credits: $0</div>
+            <div class="stat-card stat-bills" id="totalDebits">Monthly Debits: $0</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="cashFlowChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultEvents = [
+        { day: 15, amt: 8000, desc: "Mid-month Pay", type: 'credit' },
+        { day: 30, amt: 6000, desc: "End-of-month Pay", type: 'credit' },
+        { day: 1,  amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
+        { day: 9,  amt: 200,  desc: "Verizon", type: 'debit' },
+        { day: 16, amt: 1500, desc: "Amex", type: 'debit' },
+        { day: 16, amt: 2313, desc: "Mortgage", type: 'debit' }
+    ];
+
+    let events = [];
+
+    function init() {
+        let rawStored = JSON.parse(localStorage.getItem('cf_events'));
+        events = rawStored || defaultEvents;
+        document.getElementById('startBalance').value = localStorage.getItem('cf_startBalance') || 2500;
+        saveAndRefresh();
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('cf_events', JSON.stringify(events));
+        localStorage.setItem('cf_startBalance', document.getElementById('startBalance').value);
+        renderTable();
+        updateForecast();
+    }
+
+    function resetDefaults() {
+        if(confirm("Wipe all data and restore defaults?")) {
+            localStorage.removeItem('cf_events');
+            localStorage.removeItem('cf_startBalance');
+            location.reload();
+        }
+    }
+
+    let chart;
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        }
+    }
+
+    function renderTable() {
+        const body = document.getElementById('eventBody');
+        body.innerHTML = '';
+        events.sort((a, b) => a.day - b.day).forEach((ev, idx) => {
+            const isCredit = ev.type === 'credit';
+            body.innerHTML += `
+                <tr>
+                    <td><div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'day', this.innerText)">${ev.day}</div></td>
+                    <td><div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'desc', this.innerText)">${ev.desc}</div></td>
+                    <td style="text-align: right; color: var(--accent); font-weight: bold;">
+                        ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt}</div>` : ''}
+                    </td>
+                    <td style="text-align: right; color: var(--danger); font-weight: bold;">
+                        ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt}</div>` : ''}
+                    </td>
+                    <td><button class="btn-del" onclick="deleteEvent(${idx})">✕</button></td>
+                </tr>
+            `;
+        });
+        
+        const income = events.filter(e => e.type === 'credit').reduce((s, e) => s + e.amt, 0);
+        const bills = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
+        document.getElementById('totalIncome').innerText = `Monthly Credits: $${income.toLocaleString()}`;
+        document.getElementById('totalDebits').innerText = `Monthly Debits: $${bills.toLocaleString()}`;
+    }
+
+    function editEvent(index, field, value) {
+        if (field === 'day') events[index].day = parseInt(value) || 1;
+        if (field === 'desc') events[index].desc = value;
+        if (field === 'amt') events[index].amt = Math.abs(parseFloat(value.replace(/[^0-9.-]+/g,""))) || 0;
+        saveAndRefresh();
+    }
+
+    function deleteEvent(index) {
+        events.splice(index, 1);
+        saveAndRefresh();
+    }
+
+    function updateForecast() {
+        const startBalance = parseFloat(document.getElementById('startBalance').value) || 0;
+        const labels = [];
+        const data = [];
+        let currentBalance = startBalance;
+        let today = new Date();
+
+        for (let i = 0; i <= 30; i++) {
+            let date = new Date();
+            date.setDate(today.getDate() + i);
+            date.setHours(0, 0, 0, 0);
+            
+            events.forEach(ev => {
+                if (date.getDate() === ev.day) {
+                    currentBalance += (ev.type === 'credit' ? ev.amt : -ev.amt);
+                }
+            });
+
+            labels.push(date.getTime());
+            data.push(currentBalance);
+        }
+        renderChart(labels, data);
+    }
+    function renderChart(labels, data) {
+        const ctx = document.getElementById('cashFlowChart').getContext('2d');
+        if (chart) chart.destroy();
+    
+        const dataMin = Math.min(...data, -500); 
+        const dataMax = Math.max(...data, 1500);
+    
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    borderColor: '#4db6ac',
+                    backgroundColor: 'rgba(77, 182, 172, 0.08)',
+                    borderWidth: 3,
+                    stepped: 'after',
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        type: 'time', 
+                        time: { unit: 'day', displayFormats: { day: 'MMM d' } },
+                        ticks: { 
+                            color: '#b0b0b0', 
+                            font: { size: 14, weight: 'bold' } // Restored size
+                        },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        min: dataMin,
+                        max: dataMax,
+                        afterBuildTicks: axis => {
+                            const currentTicks = axis.ticks.map(t => t.value);
+                            if (!currentTicks.includes(0)) axis.ticks.push({value: 0});
+                            if (!currentTicks.includes(1000)) axis.ticks.push({value: 1000});
+                            axis.ticks.sort((a,b) => a.value - b.value);
+                        },
+                        ticks: { 
+                            font: { size: 14, weight: 'bold' }, // Restored size
+                            color: (context) => {
+                                if (context.tick.value === 0) return '#ff3d00';
+                                if (context.tick.value === 1000) return '#ffeb3b';
+                                return '#b0b0b0';
+                            },
+                            callback: (value) => (value < 0 ? '-$' : '$') + Math.abs(value).toLocaleString()
+                        },
+                        grid: { 
+                            color: (context) => {
+                                if (context.tick.value === 0) return '#ff3d00'; 
+                                if (context.tick.value === 1000) return '#ffeb3b';
+                                return 'rgba(255,255,255,0.05)';
+                            },
+                            lineWidth: (context) => {
+                                if (context.tick.value === 0 || context.tick.value === 1000) return 2.5;
+                                return 1;
+                            },
+                            borderDash: (context) => {
+                                if (context.tick.value === 1000) return [6, 4];
+                                return [];
+                            }
+                        } 
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1e1e1e',
+                        titleColor: '#4db6ac',
+                        titleFont: { size: 16, weight: 'bold' },
+                        bodyFont: { size: 14 },
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: (tooltipItems) => {
+                                const date = new Date(tooltipItems[0].parsed.x);
+                                return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                            },
+                            label: (context) => `Balance: ${context.parsed.y < 0 ? '-$' : '$'}${Math.abs(context.parsed.y).toLocaleString()}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+    init();
+</script>
+</body>
+</html>
