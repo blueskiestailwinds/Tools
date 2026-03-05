@@ -188,12 +188,25 @@
            MOBILE
         ═══════════════════════════════════════════════════════════ */
         #m-top-bar {
-            position: fixed; top: 0; left: 0; right: 0; height: 56px;
-            background: var(--card-bg); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; z-index: 100;
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 56px;
+            background: var(--card-bg); 
+            border-bottom: 1px solid var(--border);
+            display: flex; 
+            align-items: center; 
+            padding: 0 16px; 
+            z-index: 100;
         }
-        .m-month-nav { display: flex; align-items: center; gap: 12px; }
+        .m-month-nav {
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            flex: 1;
+            justify-content: space-between;
+        }
         .m-nav-btn {
             width: 36px; height: 36px; border-radius: 50%;
             background: #2b2c2d; border: 1px solid var(--border);
@@ -203,12 +216,12 @@
         }
         .m-nav-btn:active { background: #3a3b3c; }
         #m-month-title {
-            font-size: 1.1rem; font-weight: 700;
-            letter-spacing: 0.5px; min-width: 160px; text-align: center;
+            font-size: 1.1rem; 
+            font-weight: 700;
+            letter-spacing: 0.5px; 
+            flex: 1;
+            text-align: center;
         }
-
-
-
         #m-swipe-viewport {
             position: fixed; top: 56px; left: 0; right: 0;
             bottom: var(--sheet-peek); overflow: hidden;
@@ -265,7 +278,6 @@
             margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase;
             color: var(--text-muted); letter-spacing: 0.5px;
         }
-
         #m-bottom-sheet {
             position: fixed; left: 0; right: 0; bottom: 0;
             background: var(--card-bg); border-top: 1px solid var(--border);
