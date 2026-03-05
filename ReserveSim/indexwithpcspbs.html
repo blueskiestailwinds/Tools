@@ -96,7 +96,26 @@
         }
         .btn:active { background: #3a3b3c; }
 
-
+        /* mode toggle base */
+        .mode-toggle { position: relative; }
+        .mode-toggle input { display: none; }
+        .mode-toggle label {
+            display: flex; align-items: center; justify-content: space-around;
+            background: #131314; border: 2px solid var(--border);
+            border-radius: 25px; cursor: pointer;
+            position: relative; width: 100%; height: 100%;
+        }
+        .mode-label {
+            font-weight: 900; z-index: 2;
+            transition: color 0.2s; user-select: none; letter-spacing: 1px;
+        }
+        .mode-label.pbs { color: var(--text-main); }
+        .mode-label.pcs { color: var(--text-muted); }
+        .switch-slider {
+            position: absolute; top: 50%;
+            background: var(--x-green); border-radius: 20px;
+            transition: transform 0.2s ease-in-out; z-index: 1;
+        }
 
         /* layout roots hidden by default */
         #desktop-root { display: none; }
@@ -181,7 +200,17 @@
         .d-num-input { width: 80px; text-align: center; padding: 4px 8px; }
         .flex-between { display: flex; align-items: center; justify-content: space-between; }
 
-
+        /* desktop mode toggle sizing */
+        #desktop-root .mode-toggle { width: 140px; height: 40px; }
+        #desktop-root .mode-label  { font-size: 13px; }
+        #desktop-root .switch-slider {
+            left: 4px; width: 65px; height: 30px;
+            transform: translateY(-50%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+        #desktop-root #d-mode-switch:checked + label .switch-slider { transform: translate(67px,-50%); }
+        #desktop-root #d-mode-switch:checked + label .pbs { color: var(--text-muted); }
+        #desktop-root #d-mode-switch:checked + label .pcs { color: var(--text-main); }
 
 
         /* ═══════════════════════════════════════════════════════════
@@ -207,7 +236,12 @@
             letter-spacing: 0.5px; min-width: 160px; text-align: center;
         }
 
-
+        #mobile-root .mode-toggle { width: 110px; height: 34px; }
+        #mobile-root .mode-label  { font-size: 11px; }
+        #mobile-root .switch-slider { left: 3px; width: 50px; height: 26px; transform: translateY(-50%); }
+        #mobile-root #m-mode-switch:checked + label .switch-slider { transform: translate(51px,-50%); }
+        #mobile-root #m-mode-switch:checked + label .pbs { color: var(--text-muted); }
+        #mobile-root #m-mode-switch:checked + label .pcs { color: var(--text-main); }
 
         #m-swipe-viewport {
             position: fixed; top: 56px; left: 0; right: 0;
@@ -361,7 +395,19 @@
                 <button class="btn" onclick="document.getElementById('d-importFile').click()">📂 Import Patterns</button>
                 <input type="file" id="d-importFile" style="display:none" onchange="importData(event)" accept=".json">
             </div>
-
+            <div class="card">
+                <div class="flex-between">
+                    <h3>Mode</h3>
+                    <div class="mode-toggle">
+                        <input type="checkbox" id="d-mode-switch" onchange="syncModeSwitch('d');validateAll()">
+                        <label for="d-mode-switch">
+                            <span class="mode-label pbs">PBS</span>
+                            <span class="mode-label pcs">PCS</span>
+                            <div class="switch-slider"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="d-main">
@@ -414,7 +460,14 @@
             <div id="m-month-title">Loading…</div>
             <div class="m-nav-btn" id="m-btn-next">&#8250;</div>
         </div>
-
+        <div class="mode-toggle">
+            <input type="checkbox" id="m-mode-switch" onchange="syncModeSwitch('m');validateAll()">
+            <label for="m-mode-switch">
+                <span class="mode-label pbs">PBS</span>
+                <span class="mode-label pcs">PCS</span>
+                <div class="switch-slider"></div>
+            </label>
+        </div>
     </div>
 
     <div id="m-swipe-viewport">
@@ -637,6 +690,20 @@ function saveSettings() {
 
 
 /* ═══════════════════════════════════════════════════════════════
+   MODE SWITCH SYNC
+═══════════════════════════════════════════════════════════════ */
+function syncModeSwitch(source) {
+    const val = document.getElementById(source + '-mode-switch').checked;
+    document.getElementById('d-mode-switch').checked = val;
+    document.getElementById('m-mode-switch').checked = val;
+}
+
+function isPCS() {
+    return document.getElementById('d-mode-switch').checked;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
    NAVIGATION
 ═══════════════════════════════════════════════════════════════ */
 function changeFocusMonth(idx) {
@@ -800,7 +867,7 @@ function checkWorkBlock(indices, offset, currLen, combo, alerts, s) {
     if (!indices.some(i => ['R','C','CQ'].includes(combo[i]))) return;
     const tStart  = indices.includes(offset);
     const tEnd    = indices.includes(offset + currLen - 1);
-    const orphan  = tEnd;
+    const orphan  = isPCS() ? (tStart || tEnd) : tEnd;
     if (indices.length < s.minW && !orphan) {
         indices.forEach(i => { if (i>=offset && i<offset+currLen) illegalIndices.add(i-offset); });
         if (indices.some(i => i>=offset && i<offset+currLen)) alerts.push('Short Work Block');
