@@ -4,186 +4,452 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cash Flow Forecast</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         :root {
-            --bg-color: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-dim: #b0b0b0;
-            --accent: #4db6ac;
-            --danger: #ff3d00;
-            --warning: #ffeb3b;
-            --border: #333333;
-            --input-bg: #2c2c2c;
+            --bg:        #0a0a0f;
+            --surface:   #111118;
+            --surface2:  #18181f;
+            --border:    rgba(255,255,255,0.07);
+            --border2:   rgba(255,255,255,0.12);
+            --text:      #f0f0f5;
+            --muted:     #5a5a72;
+            --dim:       #3a3a50;
+            --green:     #00e5b0;
+            --green-dim: rgba(0,229,176,0.08);
+            --red:       #ff4757;
+            --red-dim:   rgba(255,71,87,0.08);
+            --yellow:    #ffd32a;
+            --accent:    #7c6af7;
         }
 
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: var(--bg-color); 
-            margin: 0; padding: 28px; 
-            color: var(--text-main); 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+            background-image:
+                linear-gradient(rgba(124,106,247,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124,106,247,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
-        .container { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 480px 1fr; gap: 20px; }
-        
-        .panel { 
-            background: var(--panel-bg); 
-            padding: 24px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
-            border: 1px solid var(--border);
+        /* ── HEADER ───────────────────────────────── */
+        header {
+            max-width: 1320px;
+            margin: 0 auto 20px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        h2 { margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
-        
-        .balance-hero {
-            position: relative;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-        }
-
-        .currency-wrapper {
+        .logo {
             display: flex;
-            align-items: baseline;
-            gap: 4px;
+            align-items: center;
+            gap: 10px;
         }
 
-        .currency-symbol {
-            font-size: 2rem;
-            font-weight: 300;
-            color: var(--accent);
-        }
-
-        #startBalance { 
-            width: 100%;
-            background: transparent; 
-            border: none; 
-            border-bottom: 2px solid var(--border);
-            border-radius: 0;
-            font-size: 2rem;
+        .logo-mark {
+            width: 32px; height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem;
             font-weight: 800;
             color: white;
-            padding: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .header-date {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* ── LAYOUT ───────────────────────────────── */
+        .container {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 520px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        /* ── PANELS ───────────────────────────────── */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .panel-section {
+            padding: 22px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-section:last-child { border-bottom: none; }
+
+        .section-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        /* ── BALANCE HERO ─────────────────────────── */
+        .balance-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .balance-symbol {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 300;
+            color: var(--green);
+            line-height: 1;
+        }
+
+        #startBalance {
+            font-family: 'DM Mono', monospace;
+            font-size: 2.8rem;
+            font-weight: 500;
+            color: var(--text);
+            background: transparent;
+            border: none;
             outline: none;
-            transition: all 0.3s ease;
+            width: 100%;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        #startBalance:focus { color: var(--green); }
+
+        input[type=number] { -moz-appearance: textfield !important; appearance: textfield !important; }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
+
+        .balance-hint {
+            font-size: 0.68rem;
+            color: var(--dim);
+            margin-top: 6px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* ── STAT PILLS ───────────────────────────── */
+        .stat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-pill {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .stat-pill-label {
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-pill-label.credit { color: var(--green); }
+        .stat-pill-label.debit  { color: var(--red); }
+
+        .stat-pill-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 500;
             font-variant-numeric: tabular-nums;
         }
+        .stat-pill-value.credit { color: var(--green); }
+        .stat-pill-value.debit  { color: var(--red); }
 
-        #startBalance:focus { 
-            border-color: var(--accent);
-            text-shadow: 0 0 15px rgba(77, 182, 172, 0.3);
+        .net-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-top: 10px;
         }
 
-        /* Specific fix for Firefox */
-        input[type=number] {
-            -moz-appearance: textfield !important;
-            appearance: textfield !important;
-        }
-        
-        /* Specific fix for Chrome/Safari/Edge */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none !important;
-            margin: 0 !important;
+        .net-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
 
-        .balance-label {
+        #netFlow {
+            font-family: 'DM Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* ── TABLE ────────────────────────────────── */
+        table { width: 100%; border-collapse: collapse; }
+
+        thead tr { border-bottom: 1px solid var(--border); }
+
+        th {
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 0 8px 10px;
+            text-align: left;
+        }
+        th.right { text-align: right; }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+        td { padding: 8px 8px; font-size: 0.88rem; }
+
+        .day-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px; height: 28px;
+            border-radius: 6px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-family: 'DM Mono', monospace;
             font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 8px;
-            display: block;
+            color: var(--muted);
+            font-weight: 500;
         }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 1rem; }
-        th { text-align: left; border-bottom: 1px solid var(--border); padding: 5px; color: var(--text-dim); font-size: 0.8rem; }
-        td { padding: 8px 5px; border-bottom: 1px solid var(--border); }
-        
+        .day-badge.last-day {
+            background: rgba(124,106,247,0.1);
+            border-color: rgba(124,106,247,0.3);
+            color: var(--accent);
+            font-size: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            width: 36px;
+        }
+
+        .desc-cell {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .type-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .type-dot.credit { background: var(--green); box-shadow: 0 0 5px var(--green); }
+        .type-dot.debit  { background: var(--red);   box-shadow: 0 0 5px var(--red); }
+
         .editable {
-            cursor: pointer;
-            padding: 2px 4px;
+            cursor: text;
+            padding: 3px 5px;
             border-radius: 4px;
-            transition: background 0.2s;
+            transition: background 0.15s;
+            display: inline-block;
         }
-        .editable:hover { background: rgba(255,255,255,0.05); color: var(--accent); }
-        .editable:focus { 
-            background: var(--input-bg); 
-            outline: 2px solid var(--accent); 
-            color: white;
-        }
+        .editable:hover { background: rgba(255,255,255,0.04); }
+        .editable:focus { background: var(--surface2); outline: 1px solid var(--accent); color: white; }
 
-        .btn-del { color: var(--danger); background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.5; }
-        .btn-del:hover { opacity: 1; }
-        
-        .chart-container { position: relative; height: 550px; }
-        
-        .summary { display: flex; gap: 10px; margin-bottom: 15px; }
-        .stat-card { 
-            flex: 1; padding: 15px; border-radius: 12px; text-align: center; 
-            font-weight: bold; font-size: 1.1rem; border: 1px solid rgba(255,255,255,0.05);
+        .amt-cell {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.83rem;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
         }
-        .stat-income { background-color: rgba(77, 182, 172, 0.1); color: var(--accent); }
-        .stat-bills { background-color: rgba(255, 61, 0, 0.1); color: var(--danger); }
+        .amt-cell.credit { color: var(--green); }
+        .amt-cell.debit  { color: var(--red); }
+
+        .btn-del {
+            background: none; border: none; cursor: pointer;
+            color: var(--dim); font-size: 0.8rem;
+            padding: 4px 6px; border-radius: 4px;
+            transition: all 0.15s; line-height: 1;
+        }
+        .btn-del:hover { color: var(--red); background: var(--red-dim); }
 
         .btn-reset {
-            margin-top: 30px;
             background: none;
-            border: 1px solid #444;
-            color: #666;
-            padding: 8px;
-            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            padding: 7px 12px;
+            font-size: 0.68rem;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
             border-radius: 6px;
             cursor: pointer;
-            transition: 0.2s;
-            align-self: flex-start;
+            transition: all 0.2s;
         }
-        .btn-reset:hover { color: var(--danger); border-color: var(--danger); }
+        .btn-reset:hover { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+
+        /* ── RIGHT PANEL ──────────────────────────── */
+        .chart-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.62rem;
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .legend-swatch {
+            width: 18px; height: 2px; border-radius: 2px;
+        }
+        .legend-swatch.solid-red    { background: var(--red); }
+        .legend-swatch.dashed-yellow {
+            background: repeating-linear-gradient(
+                to right,
+                var(--yellow) 0, var(--yellow) 4px,
+                transparent 4px, transparent 7px
+            );
+        }
+
+        .chart-container { position: relative; height: 510px; }
     </style>
 </head>
 <body>
 
+<header>
+    <div class="logo">
+        <div class="logo-mark">CF</div>
+        <span class="logo-text">Cash Flow</span>
+    </div>
+    <div class="header-date" id="headerDate"></div>
+</header>
+
 <div class="container">
+
     <div class="panel">
-        <h2>Starting Balance</h2>
-        <div class="balance-hero">
-            <div class="currency-wrapper">
-                <span class="currency-symbol">$</span>
+
+        <div class="panel-section">
+            <div class="section-label">Starting Balance</div>
+            <div class="balance-row">
+                <span class="balance-symbol">$</span>
                 <input type="number" id="startBalance" value="2500" oninput="saveAndRefresh()">
+            </div>
+            <div class="balance-hint">current cash on hand</div>
+        </div>
+
+        <div class="panel-section">
+            <div class="section-label">Monthly Summary</div>
+            <div class="stat-row">
+                <div class="stat-pill">
+                    <div class="stat-pill-label credit">Credits</div>
+                    <div class="stat-pill-value credit" id="totalIncome">$0</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-pill-label debit">Debits</div>
+                    <div class="stat-pill-value debit" id="totalDebits">$0</div>
+                </div>
+            </div>
+            <div class="net-row">
+                <span class="net-label">Monthly Net</span>
+                <span id="netFlow">—</span>
             </div>
         </div>
 
-        <h2 style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;">Monthly Recurring</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Day</th>
-                    <th>Description</th>
-                    <th style="text-align: right;">Credit</th>
-                    <th style="text-align: right;">Debit</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="eventBody"></tbody>
-        </table>
-        <button class="btn-reset" onclick="resetDefaults()">Reset to Factory Defaults</button>
+        <div class="panel-section">
+            <div class="section-label">Recurring Events</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;">Day</th>
+                        <th>Description</th>
+                        <th class="right">Credit</th>
+                        <th class="right">Debit</th>
+                        <th style="width:28px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="eventBody"></tbody>
+            </table>
+        </div>
+
+        <div class="panel-section">
+            <button class="btn-reset" onclick="resetDefaults()">↺ Reset Defaults</button>
+        </div>
+
     </div>
 
-    <div class="panel">
-        <div class="summary">
-            <div class="stat-card stat-income" id="totalIncome">Monthly Credits: $0</div>
-            <div class="stat-card stat-bills" id="totalDebits">Monthly Debits: $0</div>
-        </div>
+    <div class="chart-panel">
+
         <div class="chart-container">
             <canvas id="cashFlowChart"></canvas>
         </div>
     </div>
+
 </div>
 
 <script>
+    document.getElementById('headerDate').textContent =
+        new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
     const defaultEvents = [
         { day: 15,  amt: 8000, desc: "Mid-month Pay",      type: 'credit' },
         { day: 99,  amt: 6000, desc: "End-of-month Pay",   type: 'credit', lastDay: true },
@@ -220,16 +486,12 @@
     let chart;
 
     function handleEnter(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.target.blur();
-        }
+        if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
     }
 
     function renderTable() {
         const body = document.getElementById('eventBody');
         const sorted = [...events].sort((a, b) => {
-            // lastDay events sort to the end
             if (a.lastDay && !b.lastDay) return 1;
             if (!a.lastDay && b.lastDay) return -1;
             return a.day - b.day;
@@ -238,16 +500,23 @@
         let rows = '';
         sorted.forEach((ev, idx) => {
             const isCredit = ev.type === 'credit';
-            const dayDisplay = ev.lastDay ? 'Last' : ev.day;
+            const badgeClass = ev.lastDay ? 'day-badge last-day' : 'day-badge';
+            const dayDisplay = ev.lastDay ? 'EOM' : ev.day;
+
             rows += `
                 <tr>
-                    <td><div class="editable" style="cursor: default; color: var(--text-dim);">${dayDisplay}</div></td>
-                    <td><div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'desc', this.innerText)">${ev.desc}</div></td>
-                    <td style="text-align: right; color: var(--accent); font-weight: bold;">
-                        ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt}</div>` : ''}
+                    <td><span class="${badgeClass}">${dayDisplay}</span></td>
+                    <td>
+                        <div class="desc-cell">
+                            <span class="type-dot ${isCredit ? 'credit' : 'debit'}"></span>
+                            <div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'desc', this.innerText)">${ev.desc}</div>
+                        </div>
                     </td>
-                    <td style="text-align: right; color: var(--danger); font-weight: bold;">
-                        ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt}</div>` : ''}
+                    <td class="amt-cell credit">
+                        ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
+                    </td>
+                    <td class="amt-cell debit">
+                        ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
                     </td>
                     <td><button class="btn-del" onclick="deleteEvent(${idx})">✕</button></td>
                 </tr>
@@ -257,12 +526,17 @@
 
         const income = events.filter(e => e.type === 'credit').reduce((s, e) => s + e.amt, 0);
         const bills  = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
-        document.getElementById('totalIncome').innerText = `Monthly Credits: $${income.toLocaleString()}`;
-        document.getElementById('totalDebits').innerText = `Monthly Debits: $${bills.toLocaleString()}`;
+        const net    = income - bills;
+
+        document.getElementById('totalIncome').textContent = `$${income.toLocaleString()}`;
+        document.getElementById('totalDebits').textContent = `$${bills.toLocaleString()}`;
+
+        const netEl = document.getElementById('netFlow');
+        netEl.textContent = (net < 0 ? '-$' : '+$') + Math.abs(net).toLocaleString();
+        netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
     }
 
     function editEvent(index, field, value) {
-        if (field === 'day')  events[index].day  = parseInt(value) || 1;
         if (field === 'desc') events[index].desc = value;
         if (field === 'amt')  events[index].amt  = Math.abs(parseFloat(value.replace(/[^0-9.-]+/g, ""))) || 0;
         saveAndRefresh();
@@ -305,71 +579,74 @@
     function renderChart(labels, data) {
         const ctx = document.getElementById('cashFlowChart').getContext('2d');
         if (chart) chart.destroy();
-    
-        const dataMin = Math.min(...data, -500); 
+
+        const dataMin = Math.min(...data, -500);
         const dataMax = Math.max(...data, 1500);
-    
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 510);
+        gradient.addColorStop(0,   'rgba(0,229,176,0.18)');
+        gradient.addColorStop(0.5, 'rgba(0,229,176,0.04)');
+        gradient.addColorStop(1,   'rgba(0,229,176,0)');
+
         chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [{
-                    data: data,
-                    borderColor: '#4db6ac',
-                    backgroundColor: 'rgba(77, 182, 172, 0.08)',
-                    borderWidth: 3,
+                    data,
+                    borderColor: '#00e5b0',
+                    backgroundColor: gradient,
+                    borderWidth: 2,
                     stepped: 'after',
                     fill: true,
                     pointRadius: 0,
-                    pointHitRadius: 20
+                    pointHitRadius: 20,
+                    tension: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { 
-                        type: 'time', 
+                    x: {
+                        type: 'time',
                         time: { unit: 'day', displayFormats: { day: 'MMM d' } },
-                        ticks: { 
-                            color: '#b0b0b0', 
-                            font: { size: 14, weight: 'bold' }
+                        ticks: {
+                            color: '#5a5a72',
+                            font: { size: 14, family: "'DM Mono'", weight: '500' },
+                            maxRotation: 0
                         },
-                        grid: { display: false }
+                        grid: { display: false },
+                        border: { color: 'rgba(255,255,255,0.05)' }
                     },
-                    y: { 
+                    y: {
                         min: dataMin,
                         max: dataMax,
                         afterBuildTicks: axis => {
-                            const currentTicks = axis.ticks.map(t => t.value);
-                            if (!currentTicks.includes(0))    axis.ticks.push({ value: 0 });
-                            if (!currentTicks.includes(1000)) axis.ticks.push({ value: 1000 });
+                            const current = axis.ticks.map(t => t.value);
+                            if (!current.includes(0))    axis.ticks.push({ value: 0 });
+                            if (!current.includes(1000)) axis.ticks.push({ value: 1000 });
                             axis.ticks.sort((a, b) => a.value - b.value);
                         },
-                        ticks: { 
-                            font: { size: 14, weight: 'bold' },
-                            color: (context) => {
-                                if (context.tick.value === 0)    return '#ff3d00';
-                                if (context.tick.value === 1000) return '#ffeb3b';
-                                return '#b0b0b0';
+                        ticks: {
+                            font: { size: 14, family: "'DM Mono'", weight: '500' },
+                            color: c => {
+                                if (c.tick.value === 0)    return '#ff4757';
+                                if (c.tick.value === 1000) return '#ffd32a';
+                                return '#5a5a72';
                             },
-                            callback: (value) => (value < 0 ? '-$' : '$') + Math.abs(value).toLocaleString()
+                            callback: v => (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString()
                         },
-                        grid: { 
-                            color: (context) => {
-                                if (context.tick.value === 0)    return '#ff3d00'; 
-                                if (context.tick.value === 1000) return '#ffeb3b';
-                                return 'rgba(255,255,255,0.05)';
+                        grid: {
+                            color: c => {
+                                if (c.tick.value === 0)    return 'rgba(255,71,87,0.35)';
+                                if (c.tick.value === 1000) return 'rgba(255,211,42,0.2)';
+                                return 'rgba(255,255,255,0.035)';
                             },
-                            lineWidth: (context) => {
-                                if (context.tick.value === 0 || context.tick.value === 1000) return 2.5;
-                                return 1;
-                            },
-                            borderDash: (context) => {
-                                if (context.tick.value === 1000) return [6, 4];
-                                return [];
-                            }
-                        } 
+                            lineWidth: c => (c.tick.value === 0 || c.tick.value === 1000) ? 1.5 : 1,
+                            borderDash: c => c.tick.value === 1000 ? [5, 4] : []
+                        },
+                        border: { color: 'rgba(255,255,255,0.05)' }
                     }
                 },
                 plugins: {
@@ -377,19 +654,23 @@
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: '#1e1e1e',
-                        titleColor: '#4db6ac',
-                        titleFont: { size: 16, weight: 'bold' },
-                        bodyFont: { size: 14 },
-                        padding: 12,
-                        cornerRadius: 8,
+                        backgroundColor: '#18181f',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        titleColor: '#00e5b0',
+                        titleFont: { size: 14, family: "'DM Mono'", weight: '500' },
+                        bodyColor: '#f0f0f5',
+                        bodyFont: { size: 16, family: "'DM Mono'" },
+                        padding: 14,
+                        cornerRadius: 10,
                         displayColors: false,
                         callbacks: {
-                            title: (tooltipItems) => {
-                                const date = new Date(tooltipItems[0].parsed.x);
-                                return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-                            },
-                            label: (context) => `Balance: ${context.parsed.y < 0 ? '-$' : '$'}${Math.abs(context.parsed.y).toLocaleString()}`
+                            title: items => new Date(items[0].parsed.x)
+                                .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                            label: c => {
+                                const v = c.parsed.y;
+                                return 'Balance  ' + (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString();
+                            }
                         }
                     }
                 }
