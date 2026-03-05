@@ -370,16 +370,16 @@
                 <select id="d-month-selector" onchange="changeFocusMonth(parseInt(this.value))" style="width:100%;margin-top:10px;"></select>
                 <div class="d-stat-row">
                     <span>Reserve Guarantee:</span>
-                    <select id="d-alv-cat" oninput="onSettingsChange()">
+                    <select id="d-alv-cat" onchange="validateAll()">
                         <option value="cat1">72:00 - 74:59</option>
                         <option value="cat2">75:00 - 80:00</option>
                     </select>
                 </div>
-                <div class="d-stat-row"><span>Min Work:</span><input type="number" id="d-cfg-min-w" class="d-num-input" value="4" oninput="onSettingsChange()"></div>
-                <div class="d-stat-row"><span>Max Work:</span><input type="number" id="d-cfg-max-w" class="d-num-input" value="99" oninput="onSettingsChange()"></div>
-                <div class="d-stat-row"><span>Max X Blks:</span><input type="number" id="d-cfg-max-x-blks" class="d-num-input" value="4" oninput="onSettingsChange()"></div>
+                <div class="d-stat-row"><span>Min Work:</span><input type="number" id="d-cfg-min-w" class="d-num-input" value="4" onchange="validateAll()"></div>
+                <div class="d-stat-row"><span>Max Work:</span><input type="number" id="d-cfg-max-w" class="d-num-input" value="99" onchange="validateAll()"></div>
+                <div class="d-stat-row"><span>Max X Blks:</span><input type="number" id="d-cfg-max-x-blks" class="d-num-input" value="4" onchange="validateAll()"></div>
                 <div style="margin-top:10px;font-size:0.85rem;">
-                    <input type="checkbox" id="d-extra-x" onchange="onSettingsChange()">
+                    <input type="checkbox" id="d-extra-x" onchange="validateAll()">
                     <label for="d-extra-x">Extra X Day</label>
                 </div>
             </div>
@@ -411,7 +411,7 @@
 
         <div class="d-main">
             <div class="d-palette">
-                <div class="brush R" data-brush="R" onclick="setBrush('R')">R</div>
+                <div class="brush R active" data-brush="R" onclick="setBrush('R')">R</div>
                 <div class="brush X" data-brush="X" onclick="setBrush('X')">X</div>
                 <div class="brush A" data-brush="A" onclick="setBrush('A')">A</div>
                 <div class="brush C" data-brush="C" onclick="setBrush('C')">C</div>
@@ -494,15 +494,15 @@
                 <h3>Settings</h3>
                 <div class="m-setting-row">
                     <span>Reserve<br>Guarantee</span>
-                    <select id="m-alv-cat" oninput="onSettingsChange()">
+                    <select id="m-alv-cat" onchange="validateAll()">
                         <option value="cat1">72:00 – 74:59 hrs</option>
                         <option value="cat2">75:00 – 80:00 hrs</option>
                     </select>
                 </div>
-                <div class="m-setting-row"><span>Min Work</span><input type="number" id="m-cfg-min-w" value="4" min="1" max="31" oninput="onSettingsChange()"></div>
-                <div class="m-setting-row"><span>Max Work</span><input type="number" id="m-cfg-max-w" value="99" min="1" max="99" oninput="onSettingsChange()"></div>
-                <div class="m-setting-row"><span>Max X Blocks</span><input type="number" id="m-cfg-max-x-blks" value="4" min="1" max="99" oninput="onSettingsChange()"></div>
-                <div class="m-setting-row"><span>Extra X Day</span><input type="checkbox" id="m-extra-x" onchange="onSettingsChange()"></div>
+                <div class="m-setting-row"><span>Min Work</span><input type="number" id="m-cfg-min-w" value="4" min="1" max="31" onchange="validateAll()"></div>
+                <div class="m-setting-row"><span>Max Work</span><input type="number" id="m-cfg-max-w" value="99" min="1" max="99" onchange="validateAll()"></div>
+                <div class="m-setting-row"><span>Max X Blocks</span><input type="number" id="m-cfg-max-x-blks" value="4" min="1" max="99" onchange="validateAll()"></div>
+                <div class="m-setting-row"><span>Extra X Day</span><input type="checkbox" id="m-extra-x" onchange="validateAll()"></div>
             </div>
             <div class="m-sheet-section">
                 <h3>Data</h3>
@@ -571,7 +571,10 @@ window.addEventListener('resize', () => {
             applyLayout();
             syncSettingsToUI();
             validateAll();
-            if (usingMobile) { initSwipe(); initBottomSheet(); }
+            if (usingMobile) {
+                initSwipe();
+                initBottomSheet();
+            }
         }
     }, 150);
 });
@@ -620,14 +623,12 @@ function generateBidMonths() {
 const BID_MONTHS   = generateBidMonths();
 const STORE_KEY    = "rm_vRolling_Final_v4";
 let currentIdx     = 2;
-let activeBrush    = 'X';
+let activeBrush    = 'R';
 let illegalIndices = new Set();
 let monthData      = {};
-// Painting state
-let isPainting        = false;
-let paintStrokeDirty  = false;   // true if any day changed during current stroke
-let swipeInited       = false;
-let sheetInited       = false;
+let isPainting     = false;
+let swipeInited    = false;
+let sheetInited    = false;
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -660,8 +661,6 @@ function init() {
 
     applyLayout();
     changeFocusMonth(currentIdx);
-    // Set correct active brush in desktop palette from JS (not relying on HTML class)
-    setBrush(activeBrush);
     initDesktopMousePainting();
 
     if (usingMobile) {
@@ -678,13 +677,6 @@ function save() {
     const out = {};
     BID_MONTHS.forEach((m, i) => { out[m.id] = monthData[i]; });
     localStorage.setItem(STORE_KEY, JSON.stringify(out));
-}
-
-// Lightweight settings-only save — no need to re-serialize all day arrays
-function saveSettings() {
-    // Settings are embedded in monthData, so we still use the same key,
-    // but we only call this from settings inputs, not from painting.
-    save();
 }
 
 
@@ -717,20 +709,20 @@ function syncSettingsToUI() {
     const s    = monthData[currentIdx].settings;
     const name = BID_MONTHS[currentIdx].name;
 
-    document.getElementById('d-month-selector').value   = currentIdx;
-    document.getElementById('d-cfg-min-w').value         = s.minW;
-    document.getElementById('d-cfg-max-w').value         = s.maxW;
-    document.getElementById('d-cfg-max-x-blks').value    = s.maxX;
-    document.getElementById('d-alv-cat').value           = s.alv;
-    document.getElementById('d-extra-x').checked        = s.extraX;
+    document.getElementById('d-month-selector').value    = currentIdx;
+    document.getElementById('d-cfg-min-w').value          = s.minW;
+    document.getElementById('d-cfg-max-w').value          = s.maxW;
+    document.getElementById('d-cfg-max-x-blks').value     = s.maxX;
+    document.getElementById('d-alv-cat').value            = s.alv;
+    document.getElementById('d-extra-x').checked         = s.extraX;
 
-    document.getElementById('m-month-selector').value   = currentIdx;
-    document.getElementById('m-cfg-min-w').value         = s.minW;
-    document.getElementById('m-cfg-max-w').value         = s.maxW;
-    document.getElementById('m-cfg-max-x-blks').value    = s.maxX;
-    document.getElementById('m-alv-cat').value           = s.alv;
-    document.getElementById('m-extra-x').checked        = s.extraX;
-    document.getElementById('m-month-title').innerText  = name;
+    document.getElementById('m-month-selector').value    = currentIdx;
+    document.getElementById('m-cfg-min-w').value          = s.minW;
+    document.getElementById('m-cfg-max-w').value          = s.maxW;
+    document.getElementById('m-cfg-max-x-blks').value     = s.maxX;
+    document.getElementById('m-alv-cat').value            = s.alv;
+    document.getElementById('m-extra-x').checked         = s.extraX;
+    document.getElementById('m-month-title').innerText   = name;
 }
 
 
@@ -745,35 +737,13 @@ function setBrush(b) {
 
 
 /* ═══════════════════════════════════════════════════════════════
-   PAINT  — fast path during stroke, full validate on stroke end
+   PAINT
 ═══════════════════════════════════════════════════════════════ */
 function paintDay(mIdx, dIdx) {
-    if (monthData[mIdx].days[dIdx] === activeBrush) return; // no-op
+    if (monthData[mIdx].days[dIdx] === activeBrush) return;
     monthData[mIdx].days[dIdx] = activeBrush;
-    paintStrokeDirty = true;
-    // Update only the affected day cell in the DOM — no full re-render
-    updateDayCell(mIdx, dIdx);
-}
-
-function endStroke() {
-    if (!paintStrokeDirty) return;
-    paintStrokeDirty = false;
     save();
-    validateAll(); // full validate + render only once per stroke
-}
-
-// Surgically update a single day cell's classes and text without rebuilding the grid
-function updateDayCell(mIdx, dIdx) {
-    const code = monthData[mIdx].days[dIdx];
-    // Update in whichever grid is currently rendered
-    const sel = `.day[data-midx="${mIdx}"][data-didx="${dIdx}"]`;
-    document.querySelectorAll(sel).forEach(el => {
-        // Remove all code classes, add new one
-        ['X','R','A','C','CQ','CI'].forEach(c => el.classList.remove(c));
-        el.classList.add(code);
-        const codeEl = el.querySelector('.day-code');
-        if (codeEl) codeEl.textContent = code;
-    });
+    validateAll();
 }
 
 function getDayFromPoint(x, y) {
@@ -786,7 +756,7 @@ function getDayFromPoint(x, y) {
 
 
 /* ═══════════════════════════════════════════════════════════════
-   VALIDATE  — reads settings from active layout only
+   VALIDATE
 ═══════════════════════════════════════════════════════════════ */
 function validateAll() {
     const s      = monthData[currentIdx].settings;
@@ -797,8 +767,7 @@ function validateAll() {
     s.maxX   = parseInt(document.getElementById(prefix+'cfg-max-x-blks').value) || 4;
     s.alv    = document.getElementById(prefix+'alv-cat').value;
     s.extraX = document.getElementById(prefix+'extra-x').checked;
-    // Note: save() is NOT called here — caller is responsible
-    // (endStroke saves after painting; settings inputs save via onSettingsChange)
+    save();
 
     illegalIndices.clear();
     const alerts   = [];
@@ -843,22 +812,7 @@ function validateAll() {
         ? `<span class="ok">✓ LEGAL</span> &nbsp; Avail:${availCount} &nbsp; X:${xUsed}/${xReq} &nbsp; Blks:${xBlks}`
         : `<span class="warn">⚠ ${unique[0]}</span>${unique.length>1?` +${unique.length-1}`:''}`;
 
-    // Only rebuild the active layout's calendars
-    if (usingMobile) {
-        renderMobilePanel('m-panel-prev', currentIdx-1, true);
-        renderMobilePanel('m-panel-curr', currentIdx,   false, availCount, xUsed, xReq, xBlks, unique);
-        renderMobilePanel('m-panel-next', currentIdx+1, true);
-    } else {
-        renderDesktopMonth('d-prev-container', currentIdx-1, true);
-        renderDesktopMonth('d-curr-container', currentIdx,   false);
-        renderDesktopMonth('d-next-container', currentIdx+1, true);
-    }
-}
-
-// Called by all settings inputs — saves then validates
-function onSettingsChange() {
-    saveSettings();
-    validateAll();
+    render(availCount, xUsed, xReq, xBlks, unique);
 }
 
 function checkWorkBlock(indices, offset, currLen, combo, alerts, s) {
@@ -881,6 +835,15 @@ function checkWorkBlock(indices, offset, currLen, combo, alerts, s) {
 /* ═══════════════════════════════════════════════════════════════
    RENDER
 ═══════════════════════════════════════════════════════════════ */
+function render(availCount, xUsed, xReq, xBlks, alerts) {
+    renderDesktopMonth('d-prev-container', currentIdx-1, true);
+    renderDesktopMonth('d-curr-container', currentIdx,   false);
+    renderDesktopMonth('d-next-container', currentIdx+1, true);
+    renderMobilePanel('m-panel-prev', currentIdx-1, true);
+    renderMobilePanel('m-panel-curr', currentIdx,   false, availCount, xUsed, xReq, xBlks, alerts);
+    renderMobilePanel('m-panel-next', currentIdx+1, true);
+}
+
 function buildGridHTML(idx, isSide, gridClass) {
     const m = BID_MONTHS[idx];
     let html = ['S','M','T','W','T','F','S'].map(d=>`<div class="weekday">${d}</div>`).join('');
@@ -945,11 +908,9 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
         ${status}`;
 
     if (!isSide) {
-        // Brush clicks
         container.querySelectorAll('.brush').forEach(el => {
             el.addEventListener('click', () => setBrush(el.dataset.brush));
         });
-        // Touch painting — listeners stay on the stable cal card element
         const cal = container.querySelector('.m-cal-card');
         cal.addEventListener('touchstart', e => {
             const t = e.changedTouches[0];
@@ -963,14 +924,7 @@ function renderMobilePanel(containerId, idx, isSide, availCount, xUsed, xReq, xB
             if (info) paintDay(info.mIdx, info.dIdx);
             e.preventDefault();
         }, { passive:false });
-        cal.addEventListener('touchend', () => {
-            isPainting = false;
-            endStroke(); // validate + save once when finger lifts
-        });
-        cal.addEventListener('touchcancel', () => {
-            isPainting = false;
-            endStroke();
-        });
+        cal.addEventListener('touchend', () => { isPainting = false; });
     }
 }
 
@@ -983,7 +937,6 @@ function initDesktopMousePainting() {
         const dayEl = e.target.closest && e.target.closest('.d-calendar-grid .day[data-didx]');
         if (!dayEl) return;
         if (e.button === 2) {
-            // Right-click: toggle R ↔ X only
             const mIdx = parseInt(dayEl.dataset.midx);
             const dIdx = parseInt(dayEl.dataset.didx);
             monthData[mIdx].days[dIdx] = monthData[mIdx].days[dIdx] === 'X' ? 'R' : 'X';
@@ -1003,12 +956,7 @@ function initDesktopMousePainting() {
         const dayEl = e.target.closest && e.target.closest('.d-calendar-grid .day[data-didx]');
         if (dayEl) paintDay(parseInt(dayEl.dataset.midx), parseInt(dayEl.dataset.didx));
     });
-    document.addEventListener('mouseup', e => {
-        if (e.button === 0) {
-            isPainting = false;
-            endStroke(); // validate + save once when mouse releases
-        }
-    });
+    document.addEventListener('mouseup', () => { isPainting = false; });
     document.addEventListener('contextmenu', e => {
         if (e.target.closest && e.target.closest('.d-calendar-grid .day[data-didx]')) {
             e.preventDefault();
@@ -1099,18 +1047,28 @@ function initBottomSheet() {
         startT   = Date.now();
         dragging = false;
         baseT    = open ? 0 : maxT();
-        locked   = body.contains(e.target) && body.scrollTop > 0;
+        // Lock out drag-to-close if touch starts inside the scrollable body while scrolled down
+        locked = body.contains(e.target) && body.scrollTop > 0;
     }, { passive:true });
 
     sheet.addEventListener('touchmove', e => {
         const dy = e.touches[0].clientY - startY;
+
         if (locked) {
-            if (body.scrollTop <= 0 && dy > 0) { locked = false; }
-            else { return; }
+            // User scrolled back to top and is now dragging down — allow close
+            if (body.scrollTop <= 0 && dy > 0) {
+                locked = false;
+            } else {
+                return; // let native scroll handle it
+            }
         }
+
         if (Math.abs(dy) > 8) dragging = true;
         if (!dragging) return;
+
+        // Don't steal upward drags when sheet is fully open — let content scroll
         if (open && dy < 0) return;
+
         const t = Math.max(0, Math.min(maxT(), baseT + dy));
         sheet.style.transition = 'none';
         sheet.style.transform  = `translateY(${t}px)`;
