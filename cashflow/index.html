@@ -465,109 +465,6 @@
         }
         .btn-del:active { color: var(--red); background: var(--red-dim); }
 
-        /* ── ADD EVENT FORM ───────────────────────── */
-        .add-form {
-            display: grid;
-            grid-template-columns: 52px 1fr 90px;
-            gap: 8px;
-            align-items: end;
-        }
-
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-label {
-            font-size: 0.52rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .form-input {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: 'DM Mono', monospace;
-            font-size: 0.82rem;
-            padding: 9px 10px;
-            outline: none;
-            width: 100%;
-            transition: border-color 0.15s;
-        }
-        .form-input:focus { border-color: var(--accent); }
-        .form-input.day-input { text-align: center; }
-
-        .type-toggle {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-        .type-toggle input { display: none; }
-        .type-toggle label {
-            padding: 9px 4px;
-            text-align: center;
-            font-size: 0.58rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            cursor: pointer;
-            background: var(--surface2);
-            color: var(--muted);
-            transition: all 0.15s;
-        }
-        .type-toggle input[value="credit"]:checked ~ label[for="typeCredit"] {
-            background: var(--green-dim);
-            color: var(--green);
-        }
-        .type-toggle input[value="debit"]:checked ~ label[for="typeDebit"] {
-            background: var(--red-dim);
-            color: var(--red);
-        }
-
-        .add-form-row2 {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            align-items: end;
-            margin-top: 8px;
-        }
-
-        .btn-add {
-            background: var(--accent);
-            border: none;
-            color: white;
-            padding: 9px 18px;
-            font-size: 0.7rem;
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn-add:active { opacity: 0.8; transform: scale(0.97); }
-
-        /* EOM checkbox */
-        .eom-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 2px;
-        }
-        .eom-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
-        .eom-row label {
-            font-size: 0.6rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-            cursor: pointer;
-        }
 
         .btn-reset {
             background: none;
@@ -707,10 +604,6 @@
                 color: var(--muted);
             }
 
-            /* Desktop add form */
-            .desktop-add-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-            .desktop-add-form .form-group { flex: 1; min-width: 70px; }
-            .desktop-add-form .form-group.desc-group { flex: 2; }
 
             .chart-panel {
                 background: var(--surface);
@@ -741,7 +634,7 @@
             <div class="stat-pill-label" style="color:var(--muted);">Balance</div>
             <div class="balance-pill-row">
                 <span class="balance-pill-symbol">$</span>
-                <input type="number" id="mBalance" class="balance-pill-input" value="2500" oninput="onBalanceInput(this.value)">
+                <input type="number" id="mBalance" class="balance-pill-input" value="2500" inputmode="decimal" pattern="[0-9]*" oninput="onBalanceInput(this.value)">
             </div>
         </div>
         <div class="stats-bar-right">
@@ -824,7 +717,7 @@
             <div class="section-label">Starting Balance</div>
             <div class="desktop-balance-row">
                 <span class="desktop-balance-symbol">$</span>
-                <input type="number" id="desktopBalance" value="2500" oninput="onBalanceInput(this.value)">
+                <input type="number" id="desktopBalance" value="2500" inputmode="decimal" pattern="[0-9]*" oninput="onBalanceInput(this.value)">
             </div>
         </div>
 
@@ -995,7 +888,7 @@ function renderTable() {
                 <td>
                     <div class="desc-cell">
                         <span class="type-dot ${isCredit ? 'credit' : 'debit'}"></span>
-                        <div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'desc', this.innerText)">${ev.desc}</div>
+                        <div class="editable" contenteditable="true" spellcheck="false" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'desc', this.innerText)">${ev.desc}</div>
                     </div>
                 </td>
                 <td class="amt-cell credit">
@@ -1013,6 +906,11 @@ function renderTable() {
     const deskBody  = document.getElementById('dEventBody');
     if (sheetBody) sheetBody.innerHTML = makeRows('s');
     if (deskBody)  deskBody.innerHTML  = makeRows('d');
+
+    // Set inputmode="decimal" on amount contenteditable cells so mobile shows numeric keypad
+    document.querySelectorAll('.amt-cell .editable').forEach(el => {
+        el.setAttribute('inputmode', 'decimal');
+    });
 }
 
 function editEvent(index, field, value) {
@@ -1023,37 +921,6 @@ function editEvent(index, field, value) {
 
 function deleteEvent(index) {
     events.splice(index, 1);
-    saveAndRefresh();
-}
-
-// ── Add Event ─────────────────────────────────
-function addEvent() {
-    const day     = parseInt(document.getElementById('newDay').value);
-    const desc    = document.getElementById('newDesc').value.trim();
-    const amt     = parseFloat(document.getElementById('newAmt').value);
-    const type    = document.querySelector('input[name="newType"]:checked').value;
-    const lastDay = document.getElementById('newLastDay').checked;
-    if (!desc || isNaN(amt) || amt <= 0) return;
-    events.push({ day: lastDay ? 99 : (day || 1), amt, desc, type, ...(lastDay ? { lastDay: true } : {}) });
-    document.getElementById('newDay').value = '';
-    document.getElementById('newDesc').value = '';
-    document.getElementById('newAmt').value = '';
-    document.getElementById('newLastDay').checked = false;
-    saveAndRefresh();
-}
-
-function addEventDesktop() {
-    const day     = parseInt(document.getElementById('dNewDay').value);
-    const desc    = document.getElementById('dNewDesc').value.trim();
-    const amt     = parseFloat(document.getElementById('dNewAmt').value);
-    const type    = document.querySelector('input[name="dNewType"]:checked').value;
-    const lastDay = document.getElementById('dNewLastDay').checked;
-    if (!desc || isNaN(amt) || amt <= 0) return;
-    events.push({ day: lastDay ? 99 : (day || 1), amt, desc, type, ...(lastDay ? { lastDay: true } : {}) });
-    document.getElementById('dNewDay').value = '';
-    document.getElementById('dNewDesc').value = '';
-    document.getElementById('dNewAmt').value = '';
-    document.getElementById('dNewLastDay').checked = false;
     saveAndRefresh();
 }
 
