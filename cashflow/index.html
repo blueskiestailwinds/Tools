@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Cash Flow Forecast</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -25,29 +25,35 @@
             --red-dim:   rgba(255,71,87,0.08);
             --yellow:    #ffd32a;
             --accent:    #7c6af7;
+            --sheet-radius: 20px;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
 
         body {
             font-family: 'Syne', sans-serif;
             background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
-            padding: 24px;
             background-image:
                 linear-gradient(rgba(124,106,247,0.025) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(124,106,247,0.025) 1px, transparent 1px);
             background-size: 40px 40px;
+            display: flex;
+            flex-direction: column;
         }
 
         /* ── HEADER ───────────────────────────────── */
         header {
-            max-width: 1320px;
-            margin: 0 auto 20px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 16px 20px 12px;
         }
 
         .logo {
@@ -77,53 +83,107 @@
 
         .header-date {
             font-family: 'DM Mono', monospace;
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: var(--muted);
         }
 
-        /* ── LAYOUT ───────────────────────────────── */
-        .container {
-            max-width: 1320px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 520px 1fr;
-            gap: 16px;
-            align-items: start;
+        /* ── MAIN CHART AREA ──────────────────────── */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0 16px 12px;
+            touch-action: none; /* we handle all touch manually */
         }
 
-        /* ── PANELS ───────────────────────────────── */
-        .panel {
+        /* Stats row above chart */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+            align-items: stretch;
+        }
+
+        .stats-bar-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stat-pill {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
+            border-radius: 10px;
+            padding: 10px 12px;
         }
 
-        .panel-section {
-            padding: 22px 24px;
-            border-bottom: 1px solid var(--border);
-        }
-        .panel-section:last-child { border-bottom: none; }
-
-        .section-label {
-            font-size: 0.62rem;
+        .stat-pill-label {
+            font-size: 0.52rem;
             font-weight: 700;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
+            margin-bottom: 4px;
             color: var(--muted);
-            margin-bottom: 14px;
         }
+        .stat-pill-label.credit { color: var(--green); }
+        .stat-pill-label.debit  { color: var(--red); }
+        .stat-pill-label.net    { color: var(--muted); }
 
-        /* ── BALANCE HERO ─────────────────────────── */
-        .balance-row {
+        .stat-pill-balance { min-width: 0; }
+
+        .balance-pill-row {
             display: flex;
             align-items: baseline;
-            gap: 6px;
+            gap: 2px;
+        }
+        .balance-pill-symbol {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--green);
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .balance-pill-input {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            min-width: 0;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .balance-pill-input:focus { color: var(--green); }
+
+        .stat-pill-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-pill-value.credit { color: var(--green); }
+        .stat-pill-value.debit  { color: var(--red); }
+
+        /* Balance display (tappable) */
+        .balance-display {
+            flex-shrink: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 12px;
+            padding: 0 2px;
         }
 
         .balance-symbol {
             font-family: 'DM Mono', monospace;
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             font-weight: 300;
             color: var(--green);
             line-height: 1;
@@ -131,7 +191,7 @@
 
         #startBalance {
             font-family: 'DM Mono', monospace;
-            font-size: 2.8rem;
+            font-size: 2.4rem;
             font-weight: 500;
             color: var(--text);
             background: transparent;
@@ -149,70 +209,169 @@
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
 
-        .balance-hint {
-            font-size: 0.68rem;
-            color: var(--dim);
-            margin-top: 6px;
-            font-family: 'DM Mono', monospace;
+        /* Chart */
+        .chart-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 0;
         }
 
-        /* ── STAT PILLS ───────────────────────────── */
-        .stat-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        #cashFlowChart {
+            width: 100% !important;
+            height: 100% !important;
         }
 
-        .stat-pill {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 14px;
+        /* ── SETTINGS TRIGGER BUTTON ──────────────── */
+        .sheet-trigger {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            z-index: 100;
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            background: var(--accent);
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 20px rgba(124,106,247,0.5);
+            transition: transform 0.15s, box-shadow 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sheet-trigger:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(124,106,247,0.4); }
+        .sheet-trigger svg { width: 22px; height: 22px; }
+
+        /* ── BACKDROP ─────────────────────────────── */
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .backdrop.visible {
+            opacity: 1;
+            pointer-events: all;
         }
 
-        .stat-pill-label {
-            font-size: 0.58rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            margin-bottom: 5px;
+        /* ── PULL-UP SHEET ────────────────────────── */
+        .sheet {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 300;
+            background: var(--surface);
+            border-top-left-radius: var(--sheet-radius);
+            border-top-right-radius: var(--sheet-radius);
+            border-top: 1px solid var(--border2);
+            display: flex;
+            flex-direction: column;
+            /* Max height: almost full screen */
+            max-height: 92vh;
+            /* Start hidden below */
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+            will-change: transform;
         }
-        .stat-pill-label.credit { color: var(--green); }
-        .stat-pill-label.debit  { color: var(--red); }
-
-        .stat-pill-value {
-            font-family: 'DM Mono', monospace;
-            font-size: 1.15rem;
-            font-weight: 500;
-            font-variant-numeric: tabular-nums;
+        .sheet.open {
+            transform: translateY(0);
         }
-        .stat-pill-value.credit { color: var(--green); }
-        .stat-pill-value.debit  { color: var(--red); }
 
-        .net-row {
+        /* Drag handle */
+        .sheet-handle-area {
+            flex-shrink: 0;
+            padding: 14px 0 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            touch-action: none;
+        }
+        .sheet-handle {
+            width: 40px; height: 4px;
+            border-radius: 2px;
+            background: var(--dim);
+        }
+
+        /* Sheet title */
+        .sheet-title-row {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-top: 10px;
+            padding: 2px 20px 14px;
+            border-bottom: 1px solid var(--border);
         }
-
-        .net-label {
+        .sheet-title {
             font-size: 0.62rem;
             font-weight: 700;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
             color: var(--muted);
         }
-
-        #netFlow {
-            font-family: 'DM Mono', monospace;
-            font-size: 1rem;
-            font-weight: 500;
+        .sheet-close {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            line-height: 1;
+            -webkit-tap-highlight-color: transparent;
         }
+        .sheet-close:active { background: var(--surface2); }
+
+        /* Scrollable content inside sheet */
+        .sheet-scroll {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .sheet-section {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sheet-section:last-child { border-bottom: none; }
+
+        .section-label {
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        /* Balance in sheet */
+        .sheet-balance-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .sheet-balance-symbol {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 300;
+            color: var(--green);
+        }
+        #sheetBalance {
+            font-family: 'DM Mono', monospace;
+            font-size: 2.2rem;
+            font-weight: 500;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        #sheetBalance:focus { color: var(--green); }
 
         /* ── TABLE ────────────────────────────────── */
         table { width: 100%; border-collapse: collapse; }
@@ -220,12 +379,12 @@
         thead tr { border-bottom: 1px solid var(--border); }
 
         th {
-            font-size: 0.58rem;
+            font-size: 0.55rem;
             font-weight: 700;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--muted);
-            padding: 0 8px 10px;
+            padding: 0 6px 10px;
             text-align: left;
         }
         th.right { text-align: right; }
@@ -235,9 +394,8 @@
             transition: background 0.15s;
         }
         tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: rgba(255,255,255,0.02); }
 
-        td { padding: 8px 8px; font-size: 0.88rem; }
+        td { padding: 9px 6px; font-size: 0.85rem; }
 
         .day-badge {
             display: inline-flex;
@@ -268,7 +426,6 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            white-space: nowrap;
         }
 
         .type-dot {
@@ -285,13 +442,14 @@
             border-radius: 4px;
             transition: background 0.15s;
             display: inline-block;
+            min-width: 20px;
         }
         .editable:hover { background: rgba(255,255,255,0.04); }
         .editable:focus { background: var(--surface2); outline: 1px solid var(--accent); color: white; }
 
         .amt-cell {
             font-family: 'DM Mono', monospace;
-            font-size: 0.83rem;
+            font-size: 0.8rem;
             text-align: right;
             font-variant-numeric: tabular-nums;
         }
@@ -301,121 +459,394 @@
         .btn-del {
             background: none; border: none; cursor: pointer;
             color: var(--dim); font-size: 0.8rem;
-            padding: 4px 6px; border-radius: 4px;
+            padding: 6px 8px; border-radius: 6px;
             transition: all 0.15s; line-height: 1;
+            -webkit-tap-highlight-color: transparent;
         }
-        .btn-del:hover { color: var(--red); background: var(--red-dim); }
+        .btn-del:active { color: var(--red); background: var(--red-dim); }
+
+        /* ── ADD EVENT FORM ───────────────────────── */
+        .add-form {
+            display: grid;
+            grid-template-columns: 52px 1fr 90px;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-label {
+            font-size: 0.52rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .form-input {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 0.82rem;
+            padding: 9px 10px;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .form-input.day-input { text-align: center; }
+
+        .type-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .type-toggle input { display: none; }
+        .type-toggle label {
+            padding: 9px 4px;
+            text-align: center;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: var(--surface2);
+            color: var(--muted);
+            transition: all 0.15s;
+        }
+        .type-toggle input[value="credit"]:checked ~ label[for="typeCredit"] {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+        .type-toggle input[value="debit"]:checked ~ label[for="typeDebit"] {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .add-form-row2 {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: end;
+            margin-top: 8px;
+        }
+
+        .btn-add {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 9px 18px;
+            font-size: 0.7rem;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-add:active { opacity: 0.8; transform: scale(0.97); }
+
+        /* EOM checkbox */
+        .eom-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .eom-row input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
+        .eom-row label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            cursor: pointer;
+        }
 
         .btn-reset {
             background: none;
             border: 1px solid var(--border);
             color: var(--dim);
-            padding: 7px 12px;
-            font-size: 0.68rem;
+            padding: 9px 14px;
+            font-size: 0.65rem;
             font-family: 'Syne', sans-serif;
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
-        .btn-reset:hover { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+        .btn-reset:active { color: var(--red); border-color: var(--red); background: var(--red-dim); }
 
-        /* ── RIGHT PANEL ──────────────────────────── */
-        .chart-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-        }
-
-        .chart-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
+        /* Safe-area bottom padding for iPhone home bar */
+        .sheet-bottom-pad {
+            flex-shrink: 0;
+            height: env(safe-area-inset-bottom, 16px);
         }
 
-        .chart-title {
-            font-size: 0.62rem;
-            font-weight: 700;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--muted);
+        /* ── DESKTOP LAYOUT (≥768px) ──────────────── */
+        @media (min-width: 768px) {
+            html, body { overflow: auto; height: auto; }
+
+            body { padding: 24px; display: block; }
+
+            header {
+                max-width: 1320px;
+                margin: 0 auto 20px;
+                padding: 0;
+            }
+
+            .main-area {
+                display: none; /* hide mobile layout */
+            }
+
+            .desktop-container {
+                max-width: 1320px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: 520px 1fr;
+                gap: 16px;
+                align-items: start;
+            }
+
+            .desktop-panel {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                overflow: hidden;
+            }
+
+            .desktop-panel-section {
+                padding: 22px 24px;
+                border-bottom: 1px solid var(--border);
+            }
+            .desktop-panel-section:last-child { border-bottom: none; }
+
+            .desktop-balance-row {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+            }
+            .desktop-balance-symbol {
+                font-family: 'DM Mono', monospace;
+                font-size: 1.6rem;
+                font-weight: 300;
+                color: var(--green);
+                line-height: 1;
+            }
+            #desktopBalance {
+                font-family: 'DM Mono', monospace;
+                font-size: 2.8rem;
+                font-weight: 500;
+                color: var(--text);
+                background: transparent;
+                border: none;
+                outline: none;
+                width: 100%;
+                font-variant-numeric: tabular-nums;
+                line-height: 1;
+                padding: 0;
+                transition: color 0.2s;
+            }
+            #desktopBalance:focus { color: var(--green); }
+
+            .desktop-stat-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .desktop-stat-pill {
+                background: var(--surface2);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 12px 14px;
+            }
+            .desktop-stat-pill-label {
+                font-size: 0.58rem;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                margin-bottom: 5px;
+            }
+            .desktop-stat-pill-label.credit { color: var(--green); }
+            .desktop-stat-pill-label.debit  { color: var(--red); }
+            .desktop-stat-pill-value {
+                font-family: 'DM Mono', monospace;
+                font-size: 1.15rem;
+                font-weight: 500;
+                font-variant-numeric: tabular-nums;
+            }
+            .desktop-stat-pill-value.credit { color: var(--green); }
+            .desktop-stat-pill-value.debit  { color: var(--red); }
+
+            .desktop-net-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 14px;
+                background: var(--surface2);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+            .desktop-net-label {
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            /* Desktop add form */
+            .desktop-add-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+            .desktop-add-form .form-group { flex: 1; min-width: 70px; }
+            .desktop-add-form .form-group.desc-group { flex: 2; }
+
+            .chart-panel {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 24px;
+            }
+            .chart-container { position: relative; height: 510px; }
+
+            /* Hide mobile-only elements */
+            .sheet-trigger, .backdrop, .sheet { display: none !important; }
         }
 
-        .chart-legend {
-            display: flex;
-            gap: 16px;
+        @media (max-width: 767px) {
+            .desktop-container { display: none; }
         }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.62rem;
-            color: var(--muted);
-            font-family: 'DM Mono', monospace;
-        }
-
-        .legend-swatch {
-            width: 18px; height: 2px; border-radius: 2px;
-        }
-        .legend-swatch.solid-red    { background: var(--red); }
-        .legend-swatch.dashed-yellow {
-            background: repeating-linear-gradient(
-                to right,
-                var(--yellow) 0, var(--yellow) 4px,
-                transparent 4px, transparent 7px
-            );
-        }
-
-        .chart-container { position: relative; height: 510px; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">
-        <div class="logo-mark">CF</div>
-        <span class="logo-text">Cash Flow</span>
+<!-- ═══════════════════════════════════════════ MOBILE LAYOUT -->
+
+
+<!-- Mobile main area: stats + chart -->
+<div class="main-area" id="mainArea">
+    <div class="stats-bar">
+        <div class="stat-pill stat-pill-balance">
+            <div class="stat-pill-label" style="color:var(--muted);">Balance</div>
+            <div class="balance-pill-row">
+                <span class="balance-pill-symbol">$</span>
+                <input type="number" id="mBalance" class="balance-pill-input" value="2500" oninput="onBalanceInput(this.value)">
+            </div>
+        </div>
+        <div class="stats-bar-right">
+            <div class="stat-pill">
+                <div class="stat-pill-label credit">Credits</div>
+                <div class="stat-pill-value credit" id="mTotalIncome">$0</div>
+            </div>
+            <div class="stat-pill">
+                <div class="stat-pill-label debit">Debits</div>
+                <div class="stat-pill-value debit" id="mTotalDebits">$0</div>
+            </div>
+        </div>
     </div>
-    <div class="header-date" id="headerDate"></div>
-</header>
 
-<div class="container">
+    <div class="chart-wrap">
+        <canvas id="cashFlowChart"></canvas>
+    </div>
+</div>
 
-    <div class="panel">
+<!-- Floating settings button -->
+<button class="sheet-trigger" id="sheetTrigger" aria-label="Open settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+</button>
 
-        <div class="panel-section">
+<!-- Backdrop -->
+<div class="backdrop" id="backdrop"></div>
+
+<!-- Pull-up Sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-handle-area" id="sheetHandle">
+        <div class="sheet-handle"></div>
+    </div>
+    <div class="sheet-title-row">
+        <span class="sheet-title">Settings &amp; Events</span>
+        <button class="sheet-close" id="sheetClose" aria-label="Close">✕</button>
+    </div>
+    <div class="sheet-scroll" id="sheetScroll">
+
+
+
+        <!-- Recurring Events Table -->
+        <div class="sheet-section">
+            <div class="section-label">Recurring Events</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:44px;">Day</th>
+                        <th>Description</th>
+                        <th class="right">Credit</th>
+                        <th class="right">Debit</th>
+                        <th style="width:32px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="eventBody"></tbody>
+            </table>
+        </div>
+
+
+
+        <!-- Reset -->
+        <div class="sheet-section">
+            <button class="btn-reset" onclick="resetDefaults()">↺ Reset to Defaults</button>
+        </div>
+
+        <div class="sheet-bottom-pad"></div>
+    </div><!-- /sheet-scroll -->
+</div><!-- /sheet -->
+
+
+<!-- ═══════════════════════════════════════════ DESKTOP LAYOUT -->
+<div class="desktop-container">
+
+    <div class="desktop-panel">
+
+        <div class="desktop-panel-section">
             <div class="section-label">Starting Balance</div>
-            <div class="balance-row">
-                <span class="balance-symbol">$</span>
-                <input type="number" id="startBalance" value="2500" oninput="saveAndRefresh()">
+            <div class="desktop-balance-row">
+                <span class="desktop-balance-symbol">$</span>
+                <input type="number" id="desktopBalance" value="2500" oninput="onBalanceInput(this.value)">
             </div>
-            <div class="balance-hint">current cash on hand</div>
         </div>
 
-        <div class="panel-section">
+        <div class="desktop-panel-section">
             <div class="section-label">Monthly Summary</div>
-            <div class="stat-row">
-                <div class="stat-pill">
-                    <div class="stat-pill-label credit">Credits</div>
-                    <div class="stat-pill-value credit" id="totalIncome">$0</div>
+            <div class="desktop-stat-row">
+                <div class="desktop-stat-pill">
+                    <div class="desktop-stat-pill-label credit">Credits</div>
+                    <div class="desktop-stat-pill-value credit" id="dTotalIncome">$0</div>
                 </div>
-                <div class="stat-pill">
-                    <div class="stat-pill-label debit">Debits</div>
-                    <div class="stat-pill-value debit" id="totalDebits">$0</div>
+                <div class="desktop-stat-pill">
+                    <div class="desktop-stat-pill-label debit">Debits</div>
+                    <div class="desktop-stat-pill-value debit" id="dTotalDebits">$0</div>
                 </div>
             </div>
-            <div class="net-row">
-                <span class="net-label">Monthly Net</span>
-                <span id="netFlow">—</span>
+            <div class="desktop-net-row">
+                <span class="desktop-net-label">Monthly Net</span>
+                <span id="dNetFlow" style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:500;">—</span>
             </div>
         </div>
 
-        <div class="panel-section">
+        <div class="desktop-panel-section">
             <div class="section-label">Recurring Events</div>
             <table>
                 <thead>
@@ -427,258 +858,469 @@
                         <th style="width:28px;"></th>
                     </tr>
                 </thead>
-                <tbody id="eventBody"></tbody>
+                <tbody id="dEventBody"></tbody>
             </table>
         </div>
 
-        <div class="panel-section">
-            <button class="btn-reset" onclick="resetDefaults()">↺ Reset Defaults</button>
+
+
+        <div class="desktop-panel-section">
+            <button class="btn-reset" onclick="resetDefaults()" style="width:auto;">↺ Reset Defaults</button>
         </div>
 
-    </div>
+    </div><!-- /desktop-panel -->
 
     <div class="chart-panel">
-
         <div class="chart-container">
-            <canvas id="cashFlowChart"></canvas>
+            <canvas id="dCashFlowChart"></canvas>
         </div>
     </div>
 
-</div>
+</div><!-- /desktop-container -->
+
 
 <script>
-    document.getElementById('headerDate').textContent =
-        new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    const defaultEvents = [
-        { day: 15,  amt: 8000, desc: "Mid-month Pay",      type: 'credit' },
-        { day: 99,  amt: 6000, desc: "End-of-month Pay",   type: 'credit', lastDay: true },
-        { day: 1,   amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
-        { day: 9,   amt: 200,  desc: "Verizon",            type: 'debit' },
-        { day: 16,  amt: 1500, desc: "Amex",               type: 'debit' },
-        { day: 16,  amt: 2313, desc: "Mortgage",           type: 'debit' }
-    ];
 
-    let events = [];
+// ── Data ─────────────────────────────────────
+const defaultEvents = [
+    { day: 15,  amt: 8000, desc: "Mid-month Pay",      type: 'credit' },
+    { day: 99,  amt: 6000, desc: "End-of-month Pay",   type: 'credit', lastDay: true },
+    { day: 1,   amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
+    { day: 9,   amt: 200,  desc: "Verizon",            type: 'debit' },
+    { day: 16,  amt: 1500, desc: "Amex",               type: 'debit' },
+    { day: 16,  amt: 2313, desc: "Mortgage",           type: 'debit' }
+];
 
-    function init() {
-        const rawStored = JSON.parse(localStorage.getItem('cf_events'));
-        events = rawStored || defaultEvents;
-        document.getElementById('startBalance').value = localStorage.getItem('cf_startBalance') || 2500;
-        saveAndRefresh();
+let events = [];
+let mobileChart, desktopChart;
+const isMobile = () => window.innerWidth < 768;
+
+// ── Init ─────────────────────────────────────
+function init() {
+    const rawStored = JSON.parse(localStorage.getItem('cf_events'));
+    events = rawStored || defaultEvents;
+    const savedBal = localStorage.getItem('cf_startBalance') || 2500;
+
+    const mb = document.getElementById('mBalance');
+    const db = document.getElementById('desktopBalance');
+    if (mb) mb.value = savedBal;
+    if (db) db.value = savedBal;
+
+    saveAndRefresh();
+}
+
+function onBalanceInput(val) {
+    ['mBalance','desktopBalance'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value != val) el.value = val;
+    });
+    saveAndRefresh();
+}
+
+function getBalance() {
+    const el = document.getElementById(isMobile() ? 'mBalance' : 'desktopBalance');
+    return parseFloat(el ? el.value : 0) || 0;
+}
+
+function saveAndRefresh() {
+    localStorage.setItem('cf_events', JSON.stringify(events));
+    const bal = getBalance();
+    localStorage.setItem('cf_startBalance', bal);
+    renderTable();
+    updateStats();
+    updateForecast();
+}
+
+function resetDefaults() {
+    if (confirm("Wipe all data and restore defaults?")) {
+        localStorage.removeItem('cf_events');
+        localStorage.removeItem('cf_startBalance');
+        location.reload();
     }
+}
 
-    function saveAndRefresh() {
-        localStorage.setItem('cf_events', JSON.stringify(events));
-        localStorage.setItem('cf_startBalance', document.getElementById('startBalance').value);
-        renderTable();
-        updateForecast();
-    }
+function handleEnter(e) {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+}
 
-    function resetDefaults() {
-        if (confirm("Wipe all data and restore defaults?")) {
-            localStorage.removeItem('cf_events');
-            localStorage.removeItem('cf_startBalance');
-            location.reload();
-        }
-    }
+// ── Stats ─────────────────────────────────────
+function updateStats() {
+    const income = events.filter(e => e.type === 'credit').reduce((s, e) => s + e.amt, 0);
+    const bills  = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
+    const net    = income - bills;
+    const netStr = (net < 0 ? '-$' : '+$') + Math.abs(net).toLocaleString();
+    const netColor = net >= 0 ? 'var(--green)' : 'var(--red)';
+    const fmt = v => `$${v.toLocaleString()}`;
 
-    let chart;
+    // Mobile stats bar
+    const mI = document.getElementById('mTotalIncome');
+    const mD = document.getElementById('mTotalDebits');
+    if (mI) mI.textContent = fmt(income);
+    if (mD) mD.textContent = fmt(bills);
 
-    function handleEnter(e) {
-        if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
-    }
+    // Sheet summary
+    const sI = document.getElementById('totalIncome');
+    const sD = document.getElementById('totalDebits');
+    const sN = document.getElementById('netFlow');
+    if (sI) sI.textContent = fmt(income);
+    if (sD) sD.textContent = fmt(bills);
+    if (sN) { sN.textContent = netStr; sN.style.color = netColor; }
 
-    function renderTable() {
-        const body = document.getElementById('eventBody');
-        const sorted = [...events].sort((a, b) => {
-            if (a.lastDay && !b.lastDay) return 1;
-            if (!a.lastDay && b.lastDay) return -1;
-            return a.day - b.day;
+    // Desktop summary
+    const dI = document.getElementById('dTotalIncome');
+    const dD = document.getElementById('dTotalDebits');
+    const dN = document.getElementById('dNetFlow');
+    if (dI) dI.textContent = fmt(income);
+    if (dD) dD.textContent = fmt(bills);
+    if (dN) { dN.textContent = netStr; dN.style.color = netColor; }
+}
+
+// ── Table ─────────────────────────────────────
+function renderTable() {
+    const sorted = [...events].sort((a, b) => {
+        if (a.lastDay && !b.lastDay) return 1;
+        if (!a.lastDay && b.lastDay) return -1;
+        return a.day - b.day;
+    });
+
+    const makeRows = (prefix) => sorted.map((ev) => {
+        const isCredit = ev.type === 'credit';
+        const badgeClass = ev.lastDay ? 'day-badge last-day' : 'day-badge';
+        const dayDisplay = ev.lastDay ? 'EOM' : ev.day;
+        const realIdx = events.indexOf(ev);
+        return `
+            <tr>
+                <td><span class="${badgeClass}">${dayDisplay}</span></td>
+                <td>
+                    <div class="desc-cell">
+                        <span class="type-dot ${isCredit ? 'credit' : 'debit'}"></span>
+                        <div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'desc', this.innerText)">${ev.desc}</div>
+                    </div>
+                </td>
+                <td class="amt-cell credit">
+                    ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
+                </td>
+                <td class="amt-cell debit">
+                    ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
+                </td>
+                <td><button class="btn-del" onclick="deleteEvent(${realIdx})">✕</button></td>
+            </tr>
+        `;
+    }).join('');
+
+    const sheetBody = document.getElementById('eventBody');
+    const deskBody  = document.getElementById('dEventBody');
+    if (sheetBody) sheetBody.innerHTML = makeRows('s');
+    if (deskBody)  deskBody.innerHTML  = makeRows('d');
+}
+
+function editEvent(index, field, value) {
+    if (field === 'desc') events[index].desc = value.trim();
+    if (field === 'amt')  events[index].amt  = Math.abs(parseFloat(value.replace(/[^0-9.]/g, ""))) || 0;
+    saveAndRefresh();
+}
+
+function deleteEvent(index) {
+    events.splice(index, 1);
+    saveAndRefresh();
+}
+
+// ── Add Event ─────────────────────────────────
+function addEvent() {
+    const day     = parseInt(document.getElementById('newDay').value);
+    const desc    = document.getElementById('newDesc').value.trim();
+    const amt     = parseFloat(document.getElementById('newAmt').value);
+    const type    = document.querySelector('input[name="newType"]:checked').value;
+    const lastDay = document.getElementById('newLastDay').checked;
+    if (!desc || isNaN(amt) || amt <= 0) return;
+    events.push({ day: lastDay ? 99 : (day || 1), amt, desc, type, ...(lastDay ? { lastDay: true } : {}) });
+    document.getElementById('newDay').value = '';
+    document.getElementById('newDesc').value = '';
+    document.getElementById('newAmt').value = '';
+    document.getElementById('newLastDay').checked = false;
+    saveAndRefresh();
+}
+
+function addEventDesktop() {
+    const day     = parseInt(document.getElementById('dNewDay').value);
+    const desc    = document.getElementById('dNewDesc').value.trim();
+    const amt     = parseFloat(document.getElementById('dNewAmt').value);
+    const type    = document.querySelector('input[name="dNewType"]:checked').value;
+    const lastDay = document.getElementById('dNewLastDay').checked;
+    if (!desc || isNaN(amt) || amt <= 0) return;
+    events.push({ day: lastDay ? 99 : (day || 1), amt, desc, type, ...(lastDay ? { lastDay: true } : {}) });
+    document.getElementById('dNewDay').value = '';
+    document.getElementById('dNewDesc').value = '';
+    document.getElementById('dNewAmt').value = '';
+    document.getElementById('dNewLastDay').checked = false;
+    saveAndRefresh();
+}
+
+// ── Chart ─────────────────────────────────────
+function updateForecast() {
+    const bal = getBalance();
+    const labels = [], data = [];
+    let cur = bal;
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    for (let i = 0; i <= 30; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        events.forEach(ev => {
+            const effDay = ev.lastDay ? lastDayOfMonth : ev.day;
+            if (date.getDate() === effDay) cur += ev.type === 'credit' ? ev.amt : -ev.amt;
         });
-
-        let rows = '';
-        sorted.forEach((ev, idx) => {
-            const isCredit = ev.type === 'credit';
-            const badgeClass = ev.lastDay ? 'day-badge last-day' : 'day-badge';
-            const dayDisplay = ev.lastDay ? 'EOM' : ev.day;
-
-            rows += `
-                <tr>
-                    <td><span class="${badgeClass}">${dayDisplay}</span></td>
-                    <td>
-                        <div class="desc-cell">
-                            <span class="type-dot ${isCredit ? 'credit' : 'debit'}"></span>
-                            <div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'desc', this.innerText)">${ev.desc}</div>
-                        </div>
-                    </td>
-                    <td class="amt-cell credit">
-                        ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
-                    </td>
-                    <td class="amt-cell debit">
-                        ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${idx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
-                    </td>
-                    <td><button class="btn-del" onclick="deleteEvent(${idx})">✕</button></td>
-                </tr>
-            `;
-        });
-        body.innerHTML = rows;
-
-        const income = events.filter(e => e.type === 'credit').reduce((s, e) => s + e.amt, 0);
-        const bills  = events.filter(e => e.type === 'debit').reduce((s, e) => s + e.amt, 0);
-        const net    = income - bills;
-
-        document.getElementById('totalIncome').textContent = `$${income.toLocaleString()}`;
-        document.getElementById('totalDebits').textContent = `$${bills.toLocaleString()}`;
-
-        const netEl = document.getElementById('netFlow');
-        netEl.textContent = (net < 0 ? '-$' : '+$') + Math.abs(net).toLocaleString();
-        netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+        labels.push(date.getTime());
+        data.push(cur);
     }
 
-    function editEvent(index, field, value) {
-        if (field === 'desc') events[index].desc = value;
-        if (field === 'amt')  events[index].amt  = Math.abs(parseFloat(value.replace(/[^0-9.-]+/g, ""))) || 0;
-        saveAndRefresh();
-    }
+    renderChart('cashFlowChart',  mobileChart,  labels, data, c => mobileChart  = c);
+    renderChart('dCashFlowChart', desktopChart, labels, data, c => desktopChart = c);
+}
 
-    function deleteEvent(index) {
-        events.splice(index, 1);
-        saveAndRefresh();
-    }
+function renderChart(canvasId, existingChart, labels, data, setChart) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (existingChart) existingChart.destroy();
 
-    function updateForecast() {
-        const startBalance = parseFloat(document.getElementById('startBalance').value) || 0;
-        const labels = [];
-        const data = [];
-        let currentBalance = startBalance;
+    const dataMin = Math.min(...data, -500);
+    const dataMax = Math.max(...data, 1500);
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 400);
+    gradient.addColorStop(0,   'rgba(0,229,176,0.18)');
+    gradient.addColorStop(0.5, 'rgba(0,229,176,0.04)');
+    gradient.addColorStop(1,   'rgba(0,229,176,0)');
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        for (let i = 0; i <= 30; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() + i);
-
-            const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-
-            events.forEach(ev => {
-                const effectiveDay = ev.lastDay ? lastDayOfMonth : ev.day;
-                if (date.getDate() === effectiveDay) {
-                    currentBalance += (ev.type === 'credit' ? ev.amt : -ev.amt);
-                }
-            });
-
-            labels.push(date.getTime());
-            data.push(currentBalance);
-        }
-
-        renderChart(labels, data);
-    }
-
-    function renderChart(labels, data) {
-        const ctx = document.getElementById('cashFlowChart').getContext('2d');
-        if (chart) chart.destroy();
-
-        const dataMin = Math.min(...data, -500);
-        const dataMax = Math.max(...data, 1500);
-
-        const gradient = ctx.createLinearGradient(0, 0, 0, 510);
-        gradient.addColorStop(0,   'rgba(0,229,176,0.18)');
-        gradient.addColorStop(0.5, 'rgba(0,229,176,0.04)');
-        gradient.addColorStop(1,   'rgba(0,229,176,0)');
-
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    data,
-                    borderColor: '#00e5b0',
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    stepped: 'after',
-                    fill: true,
-                    pointRadius: 0,
-                    pointHitRadius: 20,
-                    tension: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: { unit: 'day', displayFormats: { day: 'MMM d' } },
-                        ticks: {
-                            color: '#5a5a72',
-                            font: { size: 14, family: "'DM Mono'", weight: '500' },
-                            maxRotation: 0
-                        },
-                        grid: { display: false },
-                        border: { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    y: {
-                        min: dataMin,
-                        max: dataMax,
-                        afterBuildTicks: axis => {
-                            const current = axis.ticks.map(t => t.value);
-                            if (!current.includes(0))    axis.ticks.push({ value: 0 });
-                            if (!current.includes(1000)) axis.ticks.push({ value: 1000 });
-                            axis.ticks.sort((a, b) => a.value - b.value);
-                        },
-                        ticks: {
-                            font: { size: 14, family: "'DM Mono'", weight: '500' },
-                            color: c => {
-                                if (c.tick.value === 0)    return '#ff4757';
-                                if (c.tick.value === 1000) return '#ffd32a';
-                                return '#5a5a72';
-                            },
-                            callback: v => (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString()
-                        },
-                        grid: {
-                            color: c => {
-                                if (c.tick.value === 0)    return 'rgba(255,71,87,0.35)';
-                                if (c.tick.value === 1000) return 'rgba(255,211,42,0.2)';
-                                return 'rgba(255,255,255,0.035)';
-                            },
-                            lineWidth: c => (c.tick.value === 0 || c.tick.value === 1000) ? 1.5 : 1,
-                            borderDash: c => c.tick.value === 1000 ? [5, 4] : []
-                        },
-                        border: { color: 'rgba(255,255,255,0.05)' }
-                    }
+    const newChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                borderColor: '#00e5b0',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                stepped: 'after',
+                fill: true,
+                pointRadius: 0,
+                pointHitRadius: 20,
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'day', displayFormats: { day: 'MMM d' } },
+                    ticks: { color: '#5a5a72', font: { size: 11, family: "'DM Mono'", weight: '500' }, maxRotation: 0, maxTicksLimit: 7 },
+                    grid: { display: false },
+                    border: { color: 'rgba(255,255,255,0.05)' }
                 },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: '#18181f',
-                        borderColor: 'rgba(255,255,255,0.1)',
-                        borderWidth: 1,
-                        titleColor: '#00e5b0',
-                        titleFont: { size: 14, family: "'DM Mono'", weight: '500' },
-                        bodyColor: '#f0f0f5',
-                        bodyFont: { size: 16, family: "'DM Mono'" },
-                        padding: 14,
-                        cornerRadius: 10,
-                        displayColors: false,
-                        callbacks: {
-                            title: items => new Date(items[0].parsed.x)
-                                .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-                            label: c => {
-                                const v = c.parsed.y;
-                                return 'Balance  ' + (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString();
-                            }
+                y: {
+                    min: dataMin, max: dataMax,
+                    afterBuildTicks: axis => {
+                        const cur = axis.ticks.map(t => t.value);
+                        if (!cur.includes(0))    axis.ticks.push({ value: 0 });
+                        if (!cur.includes(1000)) axis.ticks.push({ value: 1000 });
+                        axis.ticks.sort((a, b) => a.value - b.value);
+                    },
+                    ticks: {
+                        font: { size: 11, family: "'DM Mono'", weight: '500' },
+                        color: c => {
+                            if (c.tick.value === 0)    return '#ff4757';
+                            if (c.tick.value === 1000) return '#ffd32a';
+                            return '#5a5a72';
+                        },
+                        callback: v => (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString()
+                    },
+                    grid: {
+                        color: c => {
+                            if (c.tick.value === 0)    return 'rgba(255,71,87,0.35)';
+                            if (c.tick.value === 1000) return 'rgba(255,211,42,0.2)';
+                            return 'rgba(255,255,255,0.035)';
+                        },
+                        lineWidth: c => (c.tick.value === 0 || c.tick.value === 1000) ? 1.5 : 1,
+                        borderDash: c => c.tick.value === 1000 ? [5,4] : []
+                    },
+                    border: { color: 'rgba(255,255,255,0.05)' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index', intersect: false,
+                    backgroundColor: '#18181f',
+                    borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                    titleColor: '#00e5b0',
+                    titleFont: { size: 12, family: "'DM Mono'", weight: '500' },
+                    bodyColor: '#f0f0f5',
+                    bodyFont: { size: 14, family: "'DM Mono'" },
+                    padding: 12, cornerRadius: 10, displayColors: false,
+                    callbacks: {
+                        title: items => new Date(items[0].parsed.x)
+                            .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                        label: c => {
+                            const v = c.parsed.y;
+                            return 'Balance  ' + (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString();
                         }
                     }
                 }
             }
-        });
+        }
+    });
+    setChart(newChart);
+}
+
+// ── PULL-UP SHEET ─────────────────────────────
+const sheet     = document.getElementById('sheet');
+const backdrop  = document.getElementById('backdrop');
+const sheetScroll = document.getElementById('sheetScroll');
+
+function openSheet() {
+    sheet.classList.add('open');
+    backdrop.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSheet() {
+    // Only close if scrolled to top of sheet content
+    if (sheetScroll.scrollTop > 0) {
+        sheetScroll.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+    sheet.classList.remove('open');
+    backdrop.classList.remove('visible');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('sheetTrigger').addEventListener('click', openSheet);
+document.getElementById('sheetClose').addEventListener('click', closeSheet);
+backdrop.addEventListener('click', closeSheet);
+
+// ── Sheet drag-to-dismiss ─────────────────────
+// Only fires when sheetScroll is scrolled to top.
+// When content is scrolled, drag just scrolls the sheet.
+let sheetDragStartY = 0;
+let sheetDragCurY   = 0;
+let sheetDragging   = false;
+let sheetDragIntent = null; // 'dismiss' | 'scroll' | null
+
+const handleArea = document.getElementById('sheetHandle');
+
+function sheetTouchStart(e) {
+    sheetDragStartY = e.touches[0].clientY;
+    sheetDragCurY   = sheetDragStartY;
+    sheetDragging   = true;
+    sheetDragIntent = null;
+    sheet.style.transition = 'none';
+}
+
+function sheetTouchMove(e) {
+    if (!sheetDragging) return;
+    sheetDragCurY = e.touches[0].clientY;
+    const dy = sheetDragCurY - sheetDragStartY;
+
+    // Determine intent once we have some movement
+    if (sheetDragIntent === null && Math.abs(dy) > 6) {
+        // If scrolled down in content and dragging up, let scroll handle it
+        if (sheetScroll.scrollTop > 0 && dy < 0) {
+            sheetDragIntent = 'scroll';
+            sheet.style.transition = '';
+            return;
+        }
+        // If scrolled down and dragging down, scroll up first
+        if (sheetScroll.scrollTop > 0 && dy > 0) {
+            sheetDragIntent = 'scroll';
+            sheet.style.transition = '';
+            return;
+        }
+        // At top, dragging down = dismiss
+        if (sheetScroll.scrollTop <= 0 && dy > 0) {
+            sheetDragIntent = 'dismiss';
+        } else {
+            sheetDragIntent = 'scroll';
+            sheet.style.transition = '';
+            return;
+        }
     }
 
-    init();
+    if (sheetDragIntent === 'dismiss') {
+        e.preventDefault();
+        const translate = Math.max(0, dy);
+        sheet.style.transform = `translateY(${translate}px)`;
+    }
+}
+
+function sheetTouchEnd() {
+    if (!sheetDragging) return;
+    sheetDragging = false;
+    sheet.style.transition = '';
+
+    if (sheetDragIntent === 'dismiss') {
+        const dy = sheetDragCurY - sheetDragStartY;
+        if (dy > 120) {
+            // Flick/drag past threshold → close
+            sheet.style.transform = '';
+            sheet.classList.remove('open');
+            backdrop.classList.remove('visible');
+            document.body.style.overflow = '';
+        } else {
+            // Snap back
+            sheet.style.transform = '';
+        }
+    } else {
+        sheet.style.transform = '';
+    }
+    sheetDragIntent = null;
+}
+
+// Attach drag to handle area and the title row
+[handleArea, document.querySelector('.sheet-title-row')].forEach(el => {
+    el.addEventListener('touchstart', sheetTouchStart, { passive: true });
+    el.addEventListener('touchmove',  sheetTouchMove,  { passive: false });
+    el.addEventListener('touchend',   sheetTouchEnd,   { passive: true });
+});
+
+// ── Main area: drag vs click detection ────────
+// Chart.js handles its own touch for tooltips, but we need to make sure
+// scrolling the page doesn't get misinterpreted as a click on the trigger.
+// We track drag distance on the main area to disable accidental sheet open.
+const mainArea = document.getElementById('mainArea');
+let mainTouchStartX = 0, mainTouchStartY = 0;
+let mainDragDistance = 0;
+
+mainArea.addEventListener('touchstart', e => {
+    mainTouchStartX = e.touches[0].clientX;
+    mainTouchStartY = e.touches[0].clientY;
+    mainDragDistance = 0;
+}, { passive: true });
+
+mainArea.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - mainTouchStartX;
+    const dy = e.touches[0].clientY - mainTouchStartY;
+    mainDragDistance = Math.sqrt(dx*dx + dy*dy);
+}, { passive: true });
+
+// The sheet trigger button is not inside mainArea, so no conflict there.
+// But in case something delegates click up from the chart canvas:
+mainArea.addEventListener('click', e => {
+    if (mainDragDistance > 8) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+}, true);
+
+// ── Keyboard shortcut: Escape ─────────────────
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSheet();
+});
+
+// ── Boot ──────────────────────────────────────
+init();
 </script>
 </body>
 </html>
