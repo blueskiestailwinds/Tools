@@ -335,21 +335,21 @@
                     <label for="totalPortfolio">Total Retirement Portfolio</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="totalPortfolio" value="0" oninput="formatNumber(this); calculateGroup1()">
+                        <input type="text" id="totalPortfolio" value="" onfocus="prepareCurrencyInput(this)" oninput="calculateGroup1()" onblur="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
                 <div class="input-row">
                     <label for="compContrib">Company Contributions</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="compContrib" value="0" oninput="formatNumber(this); calculateGroup1()">
+                        <input type="text" id="compContrib" value="" onfocus="prepareCurrencyInput(this)" oninput="calculateGroup1()" onblur="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
                 <div class="input-row">
                     <label for="pretax">401(k) Pre-Tax</label>
                     <div class="input-wrap">
                         <span class="input-prefix">$</span>
-                        <input type="text" id="pretax" value="0" oninput="formatNumber(this); calculateGroup1()">
+                        <input type="text" id="pretax" value="" onfocus="prepareCurrencyInput(this)" oninput="calculateGroup1()" onblur="formatNumber(this); calculateGroup1()">
                     </div>
                 </div>
             </div>
@@ -406,6 +406,12 @@
 </div>
 
 <script>
+function prepareCurrencyInput(input) {
+    if (input.value === '0') {
+        input.value = '';
+    }
+}
+
 function formatNumber(input) {
     const value = input.value.replace(/,/g, '');
     if (!isNaN(value) && value !== '') {
@@ -417,6 +423,22 @@ function formatNumber(input) {
 
 function parseInput(id) {
     return parseFloat(document.getElementById(id).value.replace(/,/g, '')) || 0;
+}
+
+function clearResults() {
+    [
+        ['largeG1', 'largeDollar'],
+        ['smallG1', 'smallDollar'],
+        ['foreignG1', 'foreignDollar'],
+        ['bondG1', 'bondDollar']
+    ].forEach(([pctId, dolId]) => {
+        const pctEl = document.getElementById(pctId);
+        const dolEl = document.getElementById(dolId);
+        pctEl.textContent = '—';
+        dolEl.textContent = '—';
+        pctEl.classList.add('result-placeholder');
+        dolEl.classList.add('result-placeholder');
+    });
 }
 
 function validatePercentages() {
@@ -434,6 +456,7 @@ function validatePercentages() {
         table.classList.add('error');
         errorMsg.textContent = `⚠ Allocations sum to ${sumPct}% — must equal 100%`;
         errorSection.style.display = 'block';
+        clearResults();
     } else {
         table.classList.remove('error');
         errorMsg.textContent = '';
@@ -459,11 +482,15 @@ function calculateGroup1() {
     const smallPct2   = parseFloat(document.getElementById('smallPct').value)   || 0;
     const foreignPct2 = parseFloat(document.getElementById('foreignPct').value) || 0;
     const bondPct2    = parseFloat(document.getElementById('bondPct').value)    || 0;
-    if (largePct2 + smallPct2 + foreignPct2 + bondPct2 !== 100) return;
+    if (largePct2 + smallPct2 + foreignPct2 + bondPct2 !== 100) {
+        clearResults();
+        return;
+    }
 
     if (foreignDollarVal + bondDollarVal > group1) {
         errorMsg.textContent = '⚠ Cannot rebalance entirely within Group 1';
         errorSection.style.display = 'block';
+        clearResults();
         return;
     } else {
         errorMsg.textContent = '';
@@ -472,6 +499,12 @@ function calculateGroup1() {
 
     const remaining      = group1 - (foreignDollarVal + bondDollarVal);
     const totalLargeSmall = largePct + smallPct;
+    if (totalLargeSmall === 0) {
+        errorMsg.textContent = '⚠ Large Cap and Small/Mid targets cannot both be 0%';
+        errorSection.style.display = 'block';
+        clearResults();
+        return;
+    }
     const largeDollarVal  = remaining * (largePct  / totalLargeSmall);
     const smallDollarVal  = remaining * (smallPct  / totalLargeSmall);
 
@@ -498,6 +531,7 @@ function calculateGroup1() {
 }
 
 validatePercentages();
+calculateGroup1();
 </script>
 
 </body>
