@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         :root {
@@ -456,14 +455,16 @@
         .amt-cell.credit { color: var(--green); }
         .amt-cell.debit  { color: var(--red); }
 
-        .btn-del {
-            background: none; border: none; cursor: pointer;
-            color: var(--dim); font-size: 0.8rem;
-            padding: 6px 8px; border-radius: 6px;
-            transition: all 0.15s; line-height: 1;
-            -webkit-tap-highlight-color: transparent;
+        .graph-exclude-cell {
+            text-align: center;
         }
-        .btn-del:active { color: var(--red); background: var(--red-dim); }
+
+        .graph-exclude-checkbox {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
 
 
         .btn-reset {
@@ -687,9 +688,8 @@
                     <tr>
                         <th style="width:44px;">Day</th>
                         <th>Description</th>
-                        <th class="right">Credit</th>
-                        <th class="right">Debit</th>
-                        <th style="width:32px;"></th>
+                        <th class="right">Amount</th>
+                        <th style="width:156px; text-align:center;">Exclude from graph</th>
                     </tr>
                 </thead>
                 <tbody id="eventBody"></tbody>
@@ -746,9 +746,8 @@
                     <tr>
                         <th style="width:40px;">Day</th>
                         <th>Description</th>
-                        <th class="right">Credit</th>
-                        <th class="right">Debit</th>
-                        <th style="width:28px;"></th>
+                        <th class="right">Amount</th>
+                        <th style="width:56px; text-align:center;">Exclude from graph</th>
                     </tr>
                 </thead>
                 <tbody id="dEventBody"></tbody>
@@ -775,24 +774,89 @@
 <script>
 
 
-// ── Data ─────────────────────────────────────
-const defaultEvents = [
-    { day: 15,  amt: 8000, desc: "Mid-month Pay",      type: 'credit' },
-    { day: 99,  amt: 6000, desc: "End-of-month Pay",   type: 'credit', lastDay: true },
-    { day: 1,   amt: 8000, desc: "Main Fidelity Card", type: 'debit' },
-    { day: 9,   amt: 200,  desc: "Verizon",            type: 'debit' },
-    { day: 16,  amt: 1500, desc: "Amex",               type: 'debit' },
-    { day: 16,  amt: 2313, desc: "Mortgage",           type: 'debit' }
+function normalizeEventName(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+// Built-in recurring event fields:
+// eventId: stable key used by app logic and saved data
+// desc: editable label shown in the table
+// type: credit or debit
+// day: calendar day, or 99 when lastDay is true
+// amt: absolute amount
+// lastDay: true means use the last day of the month
+const EVENT_COLUMNS = ['eventId', 'desc', 'type', 'day', 'amt', 'lastDay'];
+
+const EVENT_ROWS = [
+    ['midMonthPay',      'Mid-month Pay',      'credit', 15, 8000, false],
+    ['endOfMonthPay',    'End-of-month Pay',   'credit', 99, 6000, true ],
+    ['mainFidelityCard', 'Main Fidelity Card', 'debit',   1, 8000, false],
+    ['verizon',          'Verizon',            'debit',   9,  200, false],
+    ['amex',             'Amex',               'debit',  16, 1500, false],
+    ['mortgage',         'Mortgage',           'debit',  16, 2313, false],
 ];
+
+const EVENT_DICTIONARY = Object.fromEntries(
+    EVENT_ROWS.map(row => {
+        const eventId = row[0];
+        const config = Object.fromEntries(
+            EVENT_COLUMNS.slice(1).map((column, index) => [column, row[index + 1]])
+        );
+        return [eventId, config];
+    })
+);
+
+const EVENT_ID_BY_NAME = Object.fromEntries(
+    Object.entries(EVENT_DICTIONARY).map(([eventId, config]) => [normalizeEventName(config.desc), eventId])
+);
+
+// ── Data ─────────────────────────────────────
+const defaultEvents = Object.entries(EVENT_DICTIONARY).map(([eventId, config]) => ({
+    eventId,
+    day: config.day,
+    amt: config.amt,
+    desc: config.desc,
+    type: config.type,
+    excludeFromGraph: false,
+    ...(config.lastDay ? { lastDay: true } : {})
+}));
 
 let events = [];
 let mobileChart, desktopChart;
 const isMobile = () => window.innerWidth < 768;
 
+function getEventId(eventOrDesc) {
+    if (eventOrDesc && typeof eventOrDesc === 'object' && eventOrDesc.eventId && EVENT_DICTIONARY[eventOrDesc.eventId]) {
+        return eventOrDesc.eventId;
+    }
+
+    const name = typeof eventOrDesc === 'string'
+        ? normalizeEventName(eventOrDesc)
+        : normalizeEventName(eventOrDesc && eventOrDesc.desc);
+
+    return EVENT_ID_BY_NAME[name] || null;
+}
+
+function getEventConfig(eventOrDesc) {
+    const eventId = getEventId(eventOrDesc);
+    return eventId ? EVENT_DICTIONARY[eventId] : null;
+}
+
+function getResolvedEventType(eventOrDesc) {
+    const config = getEventConfig(eventOrDesc);
+    if (config) return config.type;
+    return eventOrDesc && typeof eventOrDesc === 'object' ? eventOrDesc.type : null;
+}
+
 // ── Init ─────────────────────────────────────
 function init() {
     const rawStored = JSON.parse(localStorage.getItem('cf_events'));
-    events = rawStored || defaultEvents;
+    events = (rawStored || defaultEvents).map(ev => ({
+        ...ev,
+        eventId: getEventId(ev),
+        type: getResolvedEventType(ev) || ev.type,
+        excludeFromGraph: !!ev.excludeFromGraph
+    }));
     const savedBal = localStorage.getItem('cf_startBalance') || 2500;
 
     const mb = document.getElementById('mBalance');
@@ -878,7 +942,9 @@ function renderTable() {
     });
 
     const makeRows = (prefix) => sorted.map((ev) => {
-        const isCredit = ev.type === 'credit';
+        const resolvedType = getResolvedEventType(ev) || ev.type;
+        const isCredit = resolvedType === 'credit';
+        const displayAmount = Math.abs(ev.amt);
         const badgeClass = ev.lastDay ? 'day-badge last-day' : 'day-badge';
         const dayDisplay = ev.lastDay ? 'EOM' : ev.day;
         const realIdx = events.indexOf(ev);
@@ -891,13 +957,18 @@ function renderTable() {
                         <div class="editable" contenteditable="true" spellcheck="false" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'desc', this.innerText)">${ev.desc}</div>
                     </div>
                 </td>
-                <td class="amt-cell credit">
-                    ${isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
+                <td class="amt-cell ${isCredit ? 'credit' : 'debit'}">
+                    <div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'amt', this.innerText)">${displayAmount.toLocaleString()}</div>
                 </td>
-                <td class="amt-cell debit">
-                    ${!isCredit ? `<div class="editable" contenteditable="true" onkeydown="handleEnter(event)" onblur="editEvent(${realIdx}, 'amt', this.innerText)">${ev.amt.toLocaleString()}</div>` : ''}
+                <td class="graph-exclude-cell">
+                    <input
+                        class="graph-exclude-checkbox"
+                        type="checkbox"
+                        title="Exclude this event from graph"
+                        aria-label="Exclude ${ev.desc} from graph"
+                        ${ev.excludeFromGraph ? 'checked' : ''}
+                        onchange="toggleEventGraphExclusion(${realIdx}, this.checked)">
                 </td>
-                <td><button class="btn-del" onclick="deleteEvent(${realIdx})">✕</button></td>
             </tr>
         `;
     }).join('');
@@ -914,13 +985,30 @@ function renderTable() {
 }
 
 function editEvent(index, field, value) {
-    if (field === 'desc') events[index].desc = value.trim();
-    if (field === 'amt')  events[index].amt  = Math.abs(parseFloat(value.replace(/[^0-9.]/g, ""))) || 0;
+    if (field === 'desc') {
+        events[index].desc = value.trim();
+        if (!events[index].eventId) events[index].eventId = getEventId(events[index].desc);
+        const config = getEventConfig(events[index]);
+        if (config) {
+            events[index].type = config.type;
+        }
+    }
+    if (field === 'amt') {
+        const parsed = parseFloat(String(value).replace(/[^0-9.-]/g, ""));
+        const absoluteAmount = Math.abs(Number.isFinite(parsed) ? parsed : 0);
+        const resolvedType = getResolvedEventType(events[index]) || events[index].type;
+        if (resolvedType === 'debit') {
+            events[index].type = 'debit';
+        } else if (resolvedType === 'credit') {
+            events[index].type = 'credit';
+        }
+        events[index].amt = absoluteAmount;
+    }
     saveAndRefresh();
 }
 
-function deleteEvent(index) {
-    events.splice(index, 1);
+function toggleEventGraphExclusion(index, checked) {
+    events[index].excludeFromGraph = !!checked;
     saveAndRefresh();
 }
 
@@ -936,6 +1024,7 @@ function updateForecast() {
         date.setDate(today.getDate() + i);
         const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
         events.forEach(ev => {
+            if (ev.excludeFromGraph) return;
             const effDay = ev.lastDay ? lastDayOfMonth : ev.day;
             if (date.getDate() === effDay) cur += ev.type === 'credit' ? ev.amt : -ev.amt;
         });
