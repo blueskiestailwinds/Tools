@@ -1071,7 +1071,7 @@ function showLockedDayTooltip(dayEl) {
    PAINT
 ═══════════════════════════════════════════════════════════════ */
 function paintDay(mIdx, dIdx, target) {
-    if (target === 'desired' && (activeBrush === 'CI' || activeBrush === 'CQ')) return;
+    if (target === 'desired' && (activeBrush === 'A' || activeBrush === 'CI' || activeBrush === 'CQ')) return;
     if (target === 'desired' && isDesiredDayLocked(mIdx, dIdx)) return;
 
     const arr = monthData[mIdx][target];

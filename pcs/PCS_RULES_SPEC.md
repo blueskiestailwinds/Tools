@@ -2,9 +2,9 @@ Definitions:
 
 X: X-day (off day, the only day PCS can move)
 R: Reserve (day of work)
-CQ: Training (canoot be moved by PCS)
-A: Absensce (cannot be moved by PCS)
-CI: Carry-In (cannot be moved by PCS)
+CQ: Training (canoot be moved by PCS and cannot be painted on desired calendar)
+A: Absensce (cannot be moved by PCS and cannot be painted on desired calendar)
+CI: Carry-In (cannot be moved by PCS and cannot be painted on desired calendar)
 Short Work Block: A contiguous block of work days < minWork (default: 4)
 work block: A group of days that are not X or A. CI and R are work days.
 maxXblocks: The highest permissible quantity of separate contiguous groupings of X days. [R-R-X-X-X-R-R-R-X-X-X-R-R-R-X-X-X-R-R] is three "X-day blocks". [R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X] would be illegal if maxXblocks = 4.
@@ -45,9 +45,11 @@ Display rules:
   - If the start and end date are the same, only display one date.
     - example: "March 26–March 26" becomes "March 26"
 - Rule D7:
-  - User cannot add CI or CQ in desired schedule. Those days can only be added to Current schedule and should be mirrored into the Desired Schedule.
+  - User cannot add A, CI, or CQ in desired schedule. Those days can only be added to Current schedule and should be mirrored into the Desired Schedule.
     - fails when: User selects CI and then paints a date on the desired schedule with CI.
+    - fails when: User selects A and then paints a date on the desired schedule with A.
     - passes when: User selects CQ and then attempts to paint on the desired schedule and nothing changes.
+    - passes when: User selects A and then attempts to paint on the desired schedule and nothing changes.
 - Rule D8:
   -  If the analysis results in an error and that individual error contains dates in the same months, drop the month name on the second date.
   - example: "March 2–March 3: 2 days on call is below the minimum on-call duration (4)" should be "March 2-3: 2 days on call is below the minimum on-call duration (4)."
