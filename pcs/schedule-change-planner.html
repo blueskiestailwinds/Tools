@@ -487,7 +487,7 @@
         .m-setting-row:last-child { border-bottom: none; }
         .m-setting-row span { flex-shrink: 0; color: var(--text-muted); }
         #m-sheet-body input[type="number"] {
-            width: 60px; text-align: center; padding: 6px 8px;
+            width: 100px; text-align: center; padding: 6px 8px;
             border-radius: 6px; font-size: 0.9rem; flex-shrink: 0;
         }
 
@@ -564,7 +564,7 @@
         .setting-row input[type=number] {
             width: 52px; text-align: center; padding: 4px 6px; font-size: 0.85rem;
         }
-        .d-num-input { width: 70px; text-align: center; padding: 4px 8px; }
+        .d-num-input { width: 100px; text-align: center; padding: 4px 8px; }
 
         /* Calendar panel footer stats */
         .d-cal-panel-footer {
@@ -576,9 +576,65 @@
         .d-cal-panel-footer .x-count { color: var(--x-green); }
         .d-cal-panel-footer .x-count.mismatch { color: var(--error); }
         .d-cal-panel-footer .x-blks { color: var(--text-muted); }
+
+        /* First-visit disclaimer modal */
+        .disclaimer-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .disclaimer-overlay.visible { display: flex; }
+        .disclaimer-modal {
+            width: min(560px, 100%);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+        }
+        .disclaimer-modal h2 {
+            margin: 0 0 10px;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .disclaimer-modal p {
+            margin: 0;
+            color: var(--text-muted);
+            line-height: 1.45;
+            font-size: 0.92rem;
+        }
+        .disclaimer-actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .disclaimer-actions .btn {
+            width: auto;
+            min-width: 130px;
+            margin-top: 0;
+            background: #1a2744;
+            border-color: #2563eb;
+            color: #93c5fd;
+        }
     </style>
 </head>
 <body>
+
+<div id="disclaimer-overlay" class="disclaimer-overlay" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title" aria-describedby="disclaimer-text">
+    <div class="disclaimer-modal">
+        <h2 id="disclaimer-title">Testing Tool Notice</h2>
+        <p id="disclaimer-text">This is only a testing tool, not a source of truth. Always check your bids against the PWA and SRH.</p>
+        <div class="disclaimer-actions">
+            <button class="btn" id="disclaimer-ack-btn" type="button">I Understand</button>
+        </div>
+    </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      DESKTOP LAYOUT
@@ -718,9 +774,9 @@
         <div id="m-sheet-body">
             <div class="m-sheet-section">
                 <h3>Settings</h3>
-                <div class="m-setting-row"><span>Max X-day blocks</span><input type="number" id="m-s-max-xblocks" min="1" max="10" value="4" oninput="syncSettingsFromMobile()"></div>
-                <div class="m-setting-row"><span>Min on-call days</span><input type="number" id="m-s-min-work" min="1" max="15" value="4" oninput="syncSettingsFromMobile()"></div>
-                <div class="m-setting-row"><span>Max on-call days</span><input type="number" id="m-s-max-work" min="1" max="31" value="99" oninput="syncSettingsFromMobile()"></div>
+                <div class="m-setting-row"><span>Min On-Call Days</span><input type="number" id="m-s-min-work" min="1" max="15" value="4" oninput="syncSettingsFromMobile()"></div>
+                <div class="m-setting-row"><span>Max On-Call Days</span><input type="number" id="m-s-max-work" min="1" max="31" value="99" oninput="syncSettingsFromMobile()"></div>
+                <div class="m-setting-row"><span>Max X-Day Blocks</span><input type="number" id="m-s-max-xblocks" min="1" max="10" value="4" oninput="syncSettingsFromMobile()"></div>
             </div>
             <div class="m-sheet-section">
                 <h3>Actions</h3>
@@ -787,6 +843,7 @@ window.addEventListener('resize', () => {
             applyLayout();
             syncUI();
             renderAll();
+            showFirstVisitDisclaimer();
             if (usingMobile) { initBottomSheet(); }
         }
     }, 150);
@@ -824,6 +881,8 @@ function generateBidMonths() {
 
 const BID_MONTHS = generateBidMonths();
 const STORE_KEY  = "scp_v1";
+const DISCLAIMER_ACK_KEY_DESKTOP = 'scp_disclaimer_ack_desktop_v1';
+const DISCLAIMER_ACK_KEY_MOBILE  = 'scp_disclaimer_ack_mobile_v1';
 
 let currentIdx    = 0;
 let activeBrush   = 'X';
@@ -891,10 +950,31 @@ function init() {
     changeFocusMonth(currentIdx);
     setBrush(activeBrush);
     initDesktopMousePainting();
+    showFirstVisitDisclaimer();
 
     if (usingMobile) {
         initBottomSheet();
     }
+}
+
+function showFirstVisitDisclaimer() {
+    const ackKey = usingMobile ? DISCLAIMER_ACK_KEY_MOBILE : DISCLAIMER_ACK_KEY_DESKTOP;
+    if (localStorage.getItem(ackKey) === '1') return;
+
+    const overlay = document.getElementById('disclaimer-overlay');
+    const ackBtn = document.getElementById('disclaimer-ack-btn');
+    if (!overlay || !ackBtn) return;
+
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    ackBtn.addEventListener('click', () => {
+        localStorage.setItem(ackKey, '1');
+        overlay.classList.remove('visible');
+        if (!usingMobile) {
+            document.body.style.overflow = '';
+        }
+    }, { once: true });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1039,6 +1119,36 @@ function updateDayCell(mIdx, dIdx, target) {
         const el = mobileGrid.querySelector(`.day[data-didx="${dIdx}"]`);
         if (el) applyCellState(el, code, mIdx, dIdx, target);
     }
+    updateMobileFooterStats(mIdx);
+}
+
+function updateMobileFooterStats(mIdx) {
+    if (!usingMobile || mIdx !== currentIdx) return;
+
+    const currArr = monthData[mIdx]?.current || [];
+    const desArr = monthData[mIdx]?.desired || [];
+
+    const currXCount = currArr.filter(d => d === 'X').length;
+    const desXCount = desArr.filter(d => d === 'X').length;
+    const mismatch = currXCount !== desXCount;
+
+    let currXBlks = 0, inX = false;
+    currArr.forEach(d => { if (d === 'X') { if (!inX) { currXBlks++; inX = true; } } else inX = false; });
+    let desXBlks = 0; inX = false;
+    desArr.forEach(d => { if (d === 'X') { if (!inX) { desXBlks++; inX = true; } } else inX = false; });
+
+    const currXEl = document.getElementById('m-current-x-count');
+    const desXEl = document.getElementById('m-desired-x-count');
+    const currBlksEl = document.getElementById('m-current-x-blks');
+    const desBlksEl = document.getElementById('m-desired-x-blks');
+
+    if (currXEl) currXEl.textContent = `X: ${currXCount}`;
+    if (desXEl) {
+        desXEl.textContent = `X: ${desXCount}`;
+        desXEl.style.color = mismatch ? 'var(--error)' : 'var(--x-green)';
+    }
+    if (currBlksEl) currBlksEl.textContent = `Blks: ${currXBlks}`;
+    if (desBlksEl) desBlksEl.textContent = `Blks: ${desXBlks}`;
 }
 
 function applyCellState(el, code, mIdx, dIdx, target) {
@@ -1154,8 +1264,8 @@ function renderMobilePanel(containerId, idx) {
                 </div>
                 ${buildCalendarGridHTML(idx, 'current', 'm-calendar-grid')}
                 <div class="d-cal-panel-footer" style="margin-top:8px;padding-top:8px">
-                    <span style="color:var(--x-green);font-size:0.8rem;font-weight:700">X: ${currXCount}</span>
-                    <span style="color:var(--text-muted);font-size:0.8rem;font-weight:700">Blks: ${currXBlks}</span>
+                    <span id="m-current-x-count" style="color:var(--x-green);font-size:0.8rem;font-weight:700">X: ${currXCount}</span>
+                    <span id="m-current-x-blks" style="color:var(--text-muted);font-size:0.8rem;font-weight:700">Blks: ${currXBlks}</span>
                 </div>
             </div>
         </div>
@@ -1167,8 +1277,8 @@ function renderMobilePanel(containerId, idx) {
                 </div>
                 ${buildCalendarGridHTML(idx, 'desired', 'm-calendar-grid')}
                 <div class="d-cal-panel-footer" style="margin-top:8px;padding-top:8px">
-                    <span style="color:${desXColor};font-size:0.8rem;font-weight:700">X: ${desXCount}</span>
-                    <span style="color:var(--text-muted);font-size:0.8rem;font-weight:700">Blks: ${desXBlks}</span>
+                    <span id="m-desired-x-count" style="color:${desXColor};font-size:0.8rem;font-weight:700">X: ${desXCount}</span>
+                    <span id="m-desired-x-blks" style="color:var(--text-muted);font-size:0.8rem;font-weight:700">Blks: ${desXBlks}</span>
                 </div>
             </div>
         </div>
