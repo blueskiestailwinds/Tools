@@ -48,7 +48,8 @@
         .day.R,  .brush.R  { background: var(--r-yellow);  color: #422006; }
         .day.A,  .brush.A  { background: var(--a-gray);   color: white; }
         .day.CQ, .brush.CQ { background: var(--cq-orange); color: white; }
-        .day.CI, .brush.CI { background: #334155;          color: white; }
+        .day.CI,  .brush.CI  { background: #334155;          color: white; }
+        .day.IVD, .brush.IVD { background: #7c3aed;          color: white; }
 
         .brush {
             border-radius: 8px; cursor: pointer;
@@ -675,6 +676,7 @@
                     <div><b style="color:var(--text-main)">A</b> Absence</div>
                     <div><b style="color:var(--text-main)">R</b> Reserve</div>
                     <div><b style="color:var(--text-main)">CQ</b> Training</div>
+                    <div><b style="color:var(--text-main)">IVD</b> Indiv. Vacation</div>
                 </div>
             </div>
         </div>
@@ -697,6 +699,7 @@
                     <div class="brush A" data-brush="A" onclick="setBrush('A')">A</div>
                     <div class="brush CQ" data-brush="CQ" onclick="setBrush('CQ')">CQ</div>
                     <div class="brush CI" data-brush="CI" onclick="setBrush('CI')">CI</div>
+                    <div class="brush IVD" data-brush="IVD" onclick="setBrush('IVD')">IVD</div>
                 </div>
                 <button class="d-analyze-btn stale" id="d-analyze-btn" onclick="runPCSAnalysis()">
                     🔍 Run PCS Analysis
@@ -794,6 +797,7 @@
                     <div><b style="color:var(--text-main)">A</b> Absence</div>
                     <div><b style="color:var(--text-main)">R</b> Reserve</div>
                     <div><b style="color:var(--text-main)">CQ</b> Training</div>
+                    <div><b style="color:var(--text-main)">IVD</b> Indiv. Vacation</div>
                 </div>
             </div>
         </div>
@@ -1152,7 +1156,7 @@ function updateMobileFooterStats(mIdx) {
 }
 
 function applyCellState(el, code, mIdx, dIdx, target) {
-    ['X','R','A','CQ','CI'].forEach(c => el.classList.remove(c));
+    ['X','R','A','CQ','CI','IVD'].forEach(c => el.classList.remove(c));
     el.classList.add(code);
     const codeEl = el.querySelector('.day-code');
     if (codeEl) codeEl.textContent = code;
@@ -1232,7 +1236,7 @@ function renderMobilePanel(containerId, idx) {
     // palette
     const palette = `
         <div class="m-palette">
-            ${['R','X','A','CQ','CI'].map(b =>
+            ${['R','X','A','CQ','CI','IVD'].map(b =>
                 `<div class="brush ${b}${b===activeBrush?' active':''}" data-brush="${b}">${b}</div>`
             ).join('')}
         </div>`;
