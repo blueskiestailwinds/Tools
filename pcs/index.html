@@ -1441,22 +1441,20 @@ function confirmConvertedEmployeeId(candidateId) {
     });
 }
 
-function showNoReserveNotice(employeeId, bidPeriodLabel) {
+function showImportNote(message, title = 'Import Note') {
     return new Promise(resolve => {
         const overlay = document.getElementById('import-note-overlay');
+        const heading = document.getElementById('import-note-title');
         const text = document.getElementById('import-note-text');
         const okBtn = document.getElementById('import-note-ok-btn');
 
-        const safeEmployeeId = String(employeeId || '').trim() || 'This employee';
-        const safeBidPeriod = String(bidPeriodLabel || '').trim() || 'this bid period';
-        const message = `${safeEmployeeId} appears to have a line for ${safeBidPeriod}.`;
-
-        if (!overlay || !text || !okBtn) {
+        if (!overlay || !heading || !text || !okBtn) {
             alert(message);
             resolve();
             return;
         }
 
+        heading.textContent = title;
         text.textContent = message;
         overlay.classList.add('visible');
 
@@ -1489,6 +1487,12 @@ function showNoReserveNotice(employeeId, bidPeriodLabel) {
         document.addEventListener('keydown', onKeyDown);
         setTimeout(() => okBtn.focus(), 0);
     });
+}
+
+function showNoReserveNotice(employeeId, bidPeriodLabel) {
+    const safeEmployeeId = String(employeeId || '').trim() || 'This employee';
+    const safeBidPeriod = String(bidPeriodLabel || '').trim() || 'this bid period';
+    return showImportNote(`${safeEmployeeId} appears to have a line for ${safeBidPeriod}.`);
 }
 
 function askForEmployeeId(fileName = '') {
@@ -2340,7 +2344,12 @@ async function importData(event) {
 
         throw new Error('Unsupported file type. Choose a .json, .html, or .htm file.');
     } catch (err) {
-        alert(err?.message || 'Invalid file.');
+        const message = err?.message || 'Invalid file.';
+        if (/Employee\s+\d+\s+not found in file\./i.test(message)) {
+            await showImportNote(message, 'Employee Not Found');
+            return;
+        }
+        alert(message);
     }
 }
 
