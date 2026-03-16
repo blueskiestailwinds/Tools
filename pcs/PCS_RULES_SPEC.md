@@ -5,6 +5,7 @@ R: Reserve (day of work)
 CQ: Training (canoot be moved by PCS and cannot be painted on desired calendar)
 A: Absensce (cannot be moved by PCS and cannot be painted on desired calendar)
 CI: Carry-In (cannot be moved by PCS and cannot be painted on desired calendar)
+IVD: Individual Vacation Day (can be painted on current or desired)
 Short Work Block: A contiguous block of work days < minWork (default: 4)
 work block: A group of days that are not X or A. CI and R are work days.
 maxXblocks: The highest permissible quantity of separate contiguous groupings of X days. [R-R-X-X-X-R-R-R-X-X-X-R-R-R-X-X-X-R-R] is three "X-day blocks". [R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X-R-R-R-R-X-X] would be illegal if maxXblocks = 4.
@@ -114,3 +115,4 @@ Pathfinding rules:
     - March 2 is R and March 2 is used as the start of the bid period.
   - invalid examples:
     - March 2 is CI and March 3 is used as the start of the bid period.
+  - Rule P9: IVD --- TODO
