@@ -2349,7 +2349,7 @@ async function importData(event) {
             await showImportNote(message, 'Employee Not Found');
             return;
         }
-        alert(message);
+        await showImportNote(message, 'Import Error');
     }
 }
 
