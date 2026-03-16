@@ -1037,8 +1037,10 @@ function setBrush(b) {
     document.querySelectorAll(`.brush[data-brush="${b}"]`).forEach(el => el.classList.add('active'));
 }
 
+const FIXED_CURRENT_CODES = new Set(['A', 'CQ', 'CI']);
+
 function isFixedCurrentDay(code) {
-    return code === 'A' || code === 'CQ' || code === 'CI';
+    return FIXED_CURRENT_CODES.has(code);
 }
 
 function isDesiredDayLocked(mIdx, dIdx) {
@@ -1070,6 +1072,31 @@ function showLockedDayTooltip(dayEl) {
     }, 1400);
 }
 
+function shouldMirrorCurrentToDesired(prevCode, nextCode) {
+    return isFixedCurrentDay(prevCode) || isFixedCurrentDay(nextCode);
+}
+
+function applyDayCodeChange(mIdx, dIdx, target, nextCode, options = {}) {
+    const markDirty = options.markDirty !== false;
+    const month = monthData[mIdx];
+    const arr = month && month[target];
+    if (!arr || dIdx < 0 || dIdx >= arr.length) return false;
+
+    const prevCode = arr[dIdx];
+    if (prevCode === nextCode) return false;
+
+    arr[dIdx] = nextCode;
+    if (markDirty) paintDirty = true;
+
+    if (target === 'current' && shouldMirrorCurrentToDesired(prevCode, nextCode)) {
+        month.desired[dIdx] = nextCode;
+        updateDayCell(mIdx, dIdx, 'desired');
+    }
+
+    updateDayCell(mIdx, dIdx, target);
+    return true;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    PAINT
@@ -1078,26 +1105,7 @@ function paintDay(mIdx, dIdx, target) {
     if (target === 'desired' && (activeBrush === 'A' || activeBrush === 'CI' || activeBrush === 'CQ')) return;
     if (target === 'desired' && isDesiredDayLocked(mIdx, dIdx)) return;
 
-    const arr = monthData[mIdx][target];
-    if (arr[dIdx] === activeBrush) return;
-
-    // Capture what current had BEFORE we change it
-    const prevCurrentCode = monthData[mIdx].current[dIdx];
-
-    arr[dIdx] = activeBrush;
-    paintDirty = true;
-
-    // Sync rule: any change to Current that involves A or CQ —
-    // either painting one in, or painting over one — mirrors to Desired.
-    if (target === 'current') {
-        const paintingFixed = activeBrush === 'A' || activeBrush === 'CQ' || activeBrush === 'CI';
-        const erasingFixed  = prevCurrentCode === 'A' || prevCurrentCode === 'CQ' || prevCurrentCode === 'CI';
-        if (paintingFixed || erasingFixed) {
-            monthData[mIdx].desired[dIdx] = activeBrush;
-            updateDayCell(mIdx, dIdx, 'desired');
-        }
-    }
-    updateDayCell(mIdx, dIdx, target);
+    applyDayCodeChange(mIdx, dIdx, target, activeBrush);
 }
 
 function endStroke() {
@@ -1357,9 +1365,16 @@ function initDesktopMousePainting() {
                 e.preventDefault();
                 return;
             }
-            monthData[currentIdx][target][dIdx] = monthData[currentIdx][target][dIdx] === 'X' ? 'R' : 'X';
-            updateDayCell(currentIdx, dIdx, target);
-            save(); updateSidebarStats(); markPCSStale(); e.preventDefault(); return;
+
+            const prevCode = monthData[currentIdx][target][dIdx];
+            const nextCode = prevCode === 'X' ? 'R' : 'X';
+            const changed = applyDayCodeChange(currentIdx, dIdx, target, nextCode, { markDirty: false });
+            if (changed) {
+                save();
+                updateSidebarStats();
+                markPCSStale();
+            }
+            e.preventDefault(); return;
         }
         if (e.button === 0) {
             if (target === 'desired' && isDesiredDayLocked(currentIdx, dIdx)) {
