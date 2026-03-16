@@ -665,7 +665,7 @@
                 <button class="btn" onclick="clearDesired()">🗑 Clear Desired</button>
                 <button class="btn" onclick="exportData()">💾 Export</button>
                 <button class="btn" onclick="document.getElementById('d-importFile').click()">📂 Import</button>
-                <input type="file" id="d-importFile" style="display:none" onchange="importData(event)" accept=".json">
+                <input type="file" id="d-importFile" style="display:none" onchange="importData(event)" accept=".json,.html,.htm">
             </div>
 
             <div class="card">
@@ -787,7 +787,7 @@
                 <button class="btn" onclick="clearDesired(); closeSheet();">🗑 Clear Desired</button>
                 <button class="btn" onclick="exportData()">💾 Export</button>
                 <button class="btn" onclick="document.getElementById('m-importFile').click()">📂 Import</button>
-                <input type="file" id="m-importFile" style="display:none" onchange="importData(event)" accept=".json">
+                <input type="file" id="m-importFile" style="display:none" onchange="importData(event)" accept=".json,.html,.htm">
             </div>
             <div class="m-sheet-section">
                 <h3>Legend</h3>
@@ -1422,16 +1422,257 @@ async function exportData() {
     a.download = 'schedule_change_data.json'; a.click();
 }
 
-function importData(event) {
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            const imp = JSON.parse(e.target.result);
-            Object.keys(imp).forEach(k => { monthData[k] = imp[k]; });
-            save(); renderAll();
-        } catch { alert('Invalid file.'); }
+const PARSER_MONTH_PERIODS = {
+    0:  { start:[1,1],  end:[1,30] },
+    1:  { start:[1,31], end:[3,1]  },
+    2:  { start:[3,2],  end:[3,31] },
+    3:  { start:[4,1],  end:[5,1]  },
+    4:  { start:[5,2],  end:[6,1]  },
+    5:  { start:[6,2],  end:[7,1]  },
+    6:  { start:[7,2],  end:[7,31] },
+    7:  { start:[8,1],  end:[8,30] },
+    8:  { start:[8,31], end:[9,30] },
+    9:  { start:[10,1], end:[10,31] },
+    10: { start:[11,1], end:[11,30] },
+    11: { start:[12,1], end:[12,31] },
+};
+
+const PARSER_MONTH_ABBREV_TO_INDEX = {
+    jan:0, feb:1, mar:2, apr:3, may:4, jun:5,
+    jul:6, aug:7, sep:8, oct:9, nov:10, dec:11,
+};
+
+const PARSER_SPAN_RE = /([A-Z0-9]+)\s+(\d{4}-\d{2}-\d{2})\s+[\d:]+\s+(\d{4}-\d{2}-\d{2})\s+[\d:]+/;
+const PARSER_VAC_RE = /^[PSTQF]VAC$/;
+
+function parserCleanText(text) {
+    return text.replace(/[^\x20-\x7E]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function parserUtcDate(y, m, d) {
+    return new Date(Date.UTC(y, m - 1, d));
+}
+
+function parserDateFromISO(iso) {
+    const [y, m, d] = iso.split('-').map(n => parseInt(n, 10));
+    return parserUtcDate(y, m, d);
+}
+
+function parserToISO(dateObj) {
+    return dateObj.toISOString().slice(0, 10);
+}
+
+function parserDetectBidPeriod(title) {
+    const lower = (title || '').toLowerCase();
+    let monthIdx = null;
+    for (const [abbr, idx] of Object.entries(PARSER_MONTH_ABBREV_TO_INDEX)) {
+        if (lower.includes(abbr)) {
+            monthIdx = idx;
+            break;
+        }
+    }
+    const yearMatch = (title || '').match(/\b(20\d{2})\b/);
+    const year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+    return { monthIdx, year };
+}
+
+function parserGetBidPeriod(monthIdx, year) {
+    const period = PARSER_MONTH_PERIODS[monthIdx];
+    if (!period) throw new Error(`Unsupported month index: ${monthIdx}`);
+    const start = parserUtcDate(year, period.start[0], period.start[1]);
+    const end = parserUtcDate(year, period.end[0], period.end[1]);
+    return { start, end };
+}
+
+function parserParseSpans(htmlFragment) {
+    const fragmentDoc = new DOMParser().parseFromString(htmlFragment, 'text/html');
+    const spans = [...fragmentDoc.querySelectorAll('span.PBSEvent')];
+    const out = [];
+
+    spans.forEach(span => {
+        const cleaned = parserCleanText(span.textContent || '');
+        const m = cleaned.match(PARSER_SPAN_RE);
+        if (m) {
+            out.push({
+                code: m[1],
+                start: parserDateFromISO(m[2]),
+                end: parserDateFromISO(m[3]),
+            });
+        }
+    });
+
+    return out;
+}
+
+function parserFillRange(scheduleMap, codeValue, eventStart, eventEnd, bidStart, bidEnd, overwrite = false) {
+    const startMs = Math.max(eventStart.getTime(), bidStart.getTime());
+    const endMs = Math.min(eventEnd.getTime(), bidEnd.getTime());
+    for (let t = startMs; t <= endMs; t += 86400000) {
+        const key = parserToISO(new Date(t));
+        if (overwrite || scheduleMap.get(key) === null) {
+            scheduleMap.set(key, codeValue);
+        }
+    }
+}
+
+function parseCompositeHTMLToImportPayload(htmlText, employeeId) {
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+    const title = parserCleanText(doc.querySelector('title')?.textContent || '');
+    const { monthIdx, year } = parserDetectBidPeriod(title);
+    if (monthIdx === null) {
+        throw new Error(`Could not detect month from title: '${title}'`);
+    }
+
+    const employeeNeedle = String(employeeId || '').trim();
+    const btn = [...doc.querySelectorAll('input[value]')].find(el =>
+        (el.getAttribute('value') || '').includes(employeeNeedle)
+    );
+    if (!btn) {
+        throw new Error(`Employee ${employeeNeedle} not found in file.`);
+    }
+
+    const onclick = btn.getAttribute('onclick') || '';
+    const reasonMatch = onclick.match(/makeNewWindow\((\d+)\)/);
+    if (!reasonMatch) {
+        throw new Error(`Could not determine Reason div index for ${employeeNeedle}.`);
+    }
+
+    const employeeDiv = doc.getElementById(`Reason${reasonMatch[1]}`);
+    if (!employeeDiv) {
+        throw new Error(`Div #Reason${reasonMatch[1]} not found.`);
+    }
+
+    const { start: bidStart, end: bidEnd } = parserGetBidPeriod(monthIdx, year);
+    const rawHtml = employeeDiv.outerHTML || '';
+    const markerRe = /<<[\s\xa0]+Current[\s\xa0]+Bid[\s\xa0]+>>/;
+    const markerMatch = rawHtml.match(markerRe);
+
+    let preBlock = '';
+    let currentBlock = rawHtml;
+    if (rawHtml.includes('Pre-Awards') && markerMatch) {
+        const preStart = rawHtml.indexOf('Pre-Awards') + 'Pre-Awards'.length;
+        preBlock = rawHtml.slice(preStart, markerMatch.index);
+        currentBlock = rawHtml.slice(markerMatch.index + markerMatch[0].length);
+    } else if (rawHtml.includes('Pre-Awards')) {
+        preBlock = rawHtml.split('Pre-Awards')[1] || '';
+        currentBlock = '';
+    }
+
+    const schedule = new Map();
+    for (let t = bidStart.getTime(); t <= bidEnd.getTime(); t += 86400000) {
+        schedule.set(parserToISO(new Date(t)), null);
+    }
+
+    parserParseSpans(preBlock).forEach(({ code, start, end }) => {
+        if (code !== 'ALPP' && code !== '35WD' && !PARSER_VAC_RE.test(code) && start < bidStart && end >= bidStart) {
+            parserFillRange(schedule, 'CI', start, end, bidStart, bidEnd);
+        } else if (code === 'ALPP') {
+            parserFillRange(schedule, 'ALPA', start, end, bidStart, bidEnd);
+        } else if (code === '35WD') {
+            parserFillRange(schedule, 'CQ', start, end, bidStart, bidEnd);
+        } else if (PARSER_VAC_RE.test(code)) {
+            parserFillRange(schedule, 'A', start, end, bidStart, bidEnd);
+        }
+    });
+
+    const divTextClean = parserCleanText(employeeDiv.textContent || '');
+    if (divTextClean.includes('Awarded Reserve Days:')) {
+        const reserveBlock = divTextClean.split('Awarded Reserve Days:')[1] || '';
+        const reserveRe = /(\d{4}-\d{2}-\d{2})\s*\(RES\)/g;
+        let m;
+        while ((m = reserveRe.exec(reserveBlock)) !== null) {
+            if (schedule.has(m[1]) && schedule.get(m[1]) === null) {
+                schedule.set(m[1], 'R');
+            }
+        }
+    }
+
+    parserParseSpans(currentBlock).forEach(({ code, start, end }) => {
+        if (PARSER_VAC_RE.test(code)) {
+            parserFillRange(schedule, 'A', start, end, bidStart, bidEnd);
+        }
+    });
+
+    const current = [...schedule.values()].map(v => v || 'X');
+    return {
+        '1': {
+            current,
+            desired: [...current],
+        }
     };
-    reader.readAsText(event.target.files[0]);
+}
+
+function applyImportedData(imp) {
+    const hasMonthZero = !!(imp && Object.prototype.hasOwnProperty.call(imp, '0'));
+    const hasMonthOne  = !!(imp && Object.prototype.hasOwnProperty.call(imp, '1'));
+
+    if (!hasMonthZero && !hasMonthOne) {
+        throw new Error('Missing month keys 0 and 1');
+    }
+
+    const applyImportedMonth = idx => {
+        const importedMonth = imp[String(idx)];
+        if (!importedMonth || typeof importedMonth !== 'object') {
+            throw new Error(`Month ${idx} data is invalid`);
+        }
+
+        const expectedDays = BID_MONTHS[idx]?.dayCount || 0;
+        const importedCurrent = Array.isArray(importedMonth.current) ? importedMonth.current : null;
+        const importedDesired = Array.isArray(importedMonth.desired) ? importedMonth.desired : null;
+
+        if (!importedCurrent || importedCurrent.length !== expectedDays) {
+            throw new Error(`Month ${idx} current data is missing or invalid`);
+        }
+
+        monthData[idx] = {
+            current: [...importedCurrent],
+            desired: (importedDesired && importedDesired.length === expectedDays)
+                ? [...importedDesired]
+                : [...monthData[idx].desired],
+        };
+    };
+
+    if (hasMonthZero) applyImportedMonth(0);
+    if (hasMonthOne)  applyImportedMonth(1);
+}
+
+async function importData(event) {
+    const file = event.target?.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+        const fileName = (file.name || '').toLowerCase();
+
+        if (fileName.endsWith('.json')) {
+            const text = await file.text();
+            const imp = JSON.parse(text);
+            applyImportedData(imp);
+            save(); renderAll();
+            return;
+        }
+
+        if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+            const employeeId = prompt('Enter employee number from the composite report:');
+            if (employeeId === null) return;
+            const trimmedEmployeeId = employeeId.trim();
+            if (!trimmedEmployeeId) {
+                alert('Employee number is required for HTML import.');
+                return;
+            }
+
+            const htmlText = await file.text();
+            const payload = parseCompositeHTMLToImportPayload(htmlText, trimmedEmployeeId);
+
+            applyImportedData(payload);
+            save(); renderAll();
+            return;
+        }
+
+        throw new Error('Unsupported file type. Choose a .json, .html, or .htm file.');
+    } catch (err) {
+        alert(err?.message || 'Invalid file.');
+    }
 }
 
 
