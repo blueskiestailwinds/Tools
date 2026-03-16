@@ -60,6 +60,9 @@ Pathfinding rules:
 - Rule P1: CQ does not count as work days and cannot be used to create a work block by PCS.
   - valid example: PCS analyzer can create this pattern: [X-X-X-R-R-R-R-CQ-CQ]
   - See exception P3.E2 for exceptions
+- Rule P1.1: IVD does not count as work days and cannot be used to create a work block by PCS.
+  - valid example: PCS analyzer can create this pattern: [X-X-X-R-R-R-R-IVD-IVD]
+  - See exception P3.E2 for exceptions
 - Rule P2: Only X day can be moved and only onto R days.
   - fails when: X day moved onto A, CI, or CQ day
   - passes when: All X days in desired calendar were R or X days in current calendar
@@ -78,11 +81,16 @@ Pathfinding rules:
       - invalid example:
         - March 31 is the last day of the bid period.
         - March 29 and 30 cannot be R if March 31 is X because the March 29-30 work block is short but does not touch the end of the month.
-    - P3.E2: if a short block touches CQ in the current schedule, that block can remain short as long as it still touches CQ.
+    - P3.E2: if a short block touches CQ OR IVD in the current schedule, the corresponding short block in desired can remain short as long as it still touches CQ or IVD.
       - valid example:
         - current schedule: [X-X-R-CQ-CQ-X-X] (per Rule P1, CQ does not count as work days; work block length = 1)
         - desired schedule: [X-R-R-CQ-CQ-X-X] (CQ does not coun as work days; work block length =2. Because work block length was already short, it can remain short)
-        - CQ-touching block can grow to any length within the confines of other rules.
+      - valid example:
+        - current schedule: [X-R-R-IVD-R-R-X] (per Rule P1, IVD does not count as work days; work block length = 1)
+        - desired schedule: [X-X-R-IVD-R-X-X] (CQ does not coun as work days; work block length =2. Because work block length was already short, it can remain short)
+      - CQ-touching block can grow to any length within the confines of other rules.
+      - IVD-touching block can grow to any length within the confines of other rules.
+
 - Rule P4: CI counts as R days and satisfies all requirements for contiguous work blocks.
   - Any number of R days may follow a block of CI.
 - Rule P5: If a bid period begins with a short work block, that work block can remain short as long as one day in the group remains.
@@ -115,4 +123,9 @@ Pathfinding rules:
     - March 2 is R and March 2 is used as the start of the bid period.
   - invalid examples:
     - March 2 is CI and March 3 is used as the start of the bid period.
-  - Rule P9: IVD --- TODO
+- Rule P9:
+  - IVDs can be placed on ANY R day. 
+    - valid example:
+      - current: X-R-R-R-R-R-X
+      - desired: X-R-R-IVD-R-R-X
+    Analyzer should return "Place IVD on {date of added IVD}" in the results. 

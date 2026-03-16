@@ -29,6 +29,14 @@
             --add-green:    #16a34a;
             --remove-red:   #dc2626;
             --change-blue:  #2563eb;
+
+            /* Modal system tokens */
+            --overlay-bg: rgba(0, 0, 0, 0.68);
+            --modal-radius: 14px;
+            --modal-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+            --modal-accent-bg: #1a2744;
+            --modal-accent-border: #2563eb;
+            --modal-accent-text: #93c5fd;
         }
 
         *, *::before, *::after {
@@ -202,12 +210,14 @@
 
         .d-calendar-grid {
             display: grid; grid-template-columns: repeat(7, 1fr);
-            gap: 5px; align-content: start;
+            gap: 4px; align-content: start;
+            width: 80%;
+            margin: 0 auto;
         }
-        .d-calendar-grid .weekday { font-size: 0.7rem; padding-bottom: 4px; }
-        .d-calendar-grid .day     { aspect-ratio: 1/1.15; cursor: crosshair; }
-        .d-calendar-grid .day-num  { font-size: 10px; margin-bottom: 2px; }
-        .d-calendar-grid .day-code { font-size: 16px; letter-spacing: -0.5px; }
+        .d-calendar-grid .weekday { font-size: 0.76rem; padding-bottom: 3px; }
+        .d-calendar-grid .day     { aspect-ratio: 1/0.9; cursor: crosshair; }
+        .d-calendar-grid .day-num  { font-size: 14px; margin-bottom: 2px; }
+        .d-calendar-grid .day-code { font-size: 22px; letter-spacing: -0.5px; }
 
         .d-cal-panel.current-panel .d-calendar-grid .day { cursor: crosshair; }
         .d-cal-panel.desired-panel .d-calendar-grid .day { cursor: crosshair; }
@@ -219,11 +229,16 @@
         }
         .d-palette {
             display: flex; gap: 8px; align-items: center;
-            background: var(--card-bg); padding: 10px 12px;
+            background: var(--card-bg); padding: 10px 14px;
             border-radius: 12px; border: 1px solid var(--border);
             flex-shrink: 0; justify-content: center;
         }
-        .d-palette .brush { width: 36px; height: 36px; font-size: 11px; }
+        .d-palette .brush {
+            width: 46px;
+            height: 46px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
 
         .d-analyze-btn {
             flex: 1;
@@ -316,6 +331,167 @@
         .chip-changes .val { color: #60a5fa; }
         .chip-adds    .val { color: #4ade80; }
         .chip-removes .val { color: #f87171; }
+
+        @media (min-width: 1024px) and (max-height: 1100px) {
+            #desktop-root { padding: 12px; }
+
+            .d-layout { gap: 16px; }
+
+            .d-sidebar {
+                gap: 10px;
+                top: 12px;
+            }
+
+            .card,
+            .d-cal-panel,
+            .d-pcs-panel,
+            .d-changes-panel {
+                padding: 12px;
+            }
+
+            .card,
+            .d-changes-panel,
+            .d-pcs-panel {
+                margin-bottom: 12px;
+            }
+
+            .d-month-nav-bar {
+                gap: 12px;
+                margin-bottom: 10px;
+            }
+
+            .d-nav-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+
+            .d-month-title {
+                font-size: 1.05rem;
+            }
+
+            .d-toolbar {
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .d-palette {
+                padding: 8px 12px;
+            }
+
+            .d-palette .brush {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+
+            .d-dual-row {
+                gap: 14px;
+                margin-bottom: 12px;
+            }
+
+            .d-cal-panel-header,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                margin-bottom: 10px;
+            }
+
+            .d-cal-panel-title,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                font-size: 0.92rem;
+            }
+
+            .d-calendar-grid {
+                gap: 3px;
+                width: 80%;
+            }
+
+            .d-calendar-grid .weekday {
+                font-size: 0.68rem;
+                padding-bottom: 2px;
+            }
+
+            .d-calendar-grid .day {
+                aspect-ratio: 1 / 0.82;
+            }
+
+            .d-calendar-grid .day-num {
+                font-size: 12px;
+                margin-bottom: 2px;
+            }
+
+            .d-calendar-grid .day-code {
+                font-size: 18px;
+            }
+
+            .d-cal-panel-footer {
+                margin-top: 8px;
+                padding-top: 8px;
+                font-size: 0.78rem;
+            }
+
+            .d-stat-row {
+                padding: 6px 0;
+                font-size: 0.82rem;
+                gap: 8px;
+            }
+
+            .d-num-input {
+                width: 88px;
+                padding: 3px 7px;
+            }
+
+            .btn {
+                padding: 8px;
+                margin-top: 6px;
+                font-size: 0.84rem;
+            }
+
+            .pcs-status-bar {
+                padding: 10px 12px;
+                margin-bottom: 10px;
+                font-size: 0.83rem;
+            }
+
+            .pcs-violations {
+                margin-bottom: 10px;
+            }
+
+            .pcs-violation {
+                font-size: 0.78rem;
+                padding: 7px 10px;
+            }
+
+            .pcs-steps-header {
+                margin-bottom: 8px;
+            }
+
+            .pcs-steps {
+                gap: 6px;
+            }
+
+            .pcs-step {
+                gap: 10px;
+                padding: 9px 11px;
+                font-size: 0.8rem;
+                line-height: 1.3;
+            }
+
+            .pcs-step-note {
+                font-size: 0.74rem;
+                margin-top: 2px;
+            }
+
+            .pcs-no-path,
+            .pcs-stale-msg,
+            .changes-empty {
+                font-size: 0.8rem;
+                padding: 10px 0;
+            }
+        }
 
         /* ═══════════════════════════════════════════════════════════
            MOBILE (placeholder — we'll build this out next)
@@ -583,7 +759,7 @@
             position: fixed;
             inset: 0;
             z-index: 4000;
-            background: rgba(0, 0, 0, 0.65);
+            background: var(--overlay-bg);
             display: none;
             align-items: center;
             justify-content: center;
@@ -594,9 +770,9 @@
             width: min(560px, 100%);
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: var(--modal-radius);
             padding: 18px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+            box-shadow: var(--modal-shadow);
         }
         .disclaimer-modal h2 {
             margin: 0 0 10px;
@@ -619,9 +795,200 @@
             width: auto;
             min-width: 130px;
             margin-top: 0;
-            background: #1a2744;
-            border-color: #2563eb;
-            color: #93c5fd;
+            background: var(--modal-accent-bg);
+            border-color: var(--modal-accent-border);
+            color: var(--modal-accent-text);
+        }
+
+        .ppr-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 4100;
+            background: var(--overlay-bg);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .ppr-overlay.visible { display: flex; }
+        .ppr-modal {
+            width: min(460px, 100%);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--modal-radius);
+            box-shadow: var(--modal-shadow);
+            overflow: hidden;
+        }
+        .ppr-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: #171c2b;
+        }
+        .ppr-head h3 {
+            margin: 0;
+            color: var(--modal-accent-text);
+            font-size: 0.96rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .ppr-body {
+            padding: 16px 18px 14px;
+        }
+        .ppr-subtitle {
+            margin: 0 0 12px;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .ppr-input {
+            width: 100%;
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            font-size: 1rem;
+            letter-spacing: 1.2px;
+            outline: none;
+            transition: border-color 120ms ease, box-shadow 120ms ease;
+        }
+        .ppr-input:focus {
+            border-color: var(--modal-accent-border);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .ppr-error {
+            min-height: 1.2em;
+            margin: 8px 0 0;
+            color: #fca5a5;
+            font-size: 0.8rem;
+        }
+        .ppr-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .ppr-actions .btn {
+            width: auto;
+            margin-top: 0;
+            min-width: 96px;
+        }
+        .ppr-actions .btn.cancel {
+            background: #2b2c2d;
+            border-color: var(--border);
+            color: var(--text-main);
+        }
+        .ppr-actions .btn.confirm {
+            background: var(--modal-accent-bg);
+            border-color: var(--modal-accent-border);
+            color: var(--modal-accent-text);
+        }
+
+        .ppr-confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 4200;
+            background: var(--overlay-bg);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .ppr-confirm-overlay.visible { display: flex; }
+        .ppr-confirm-modal {
+            width: min(430px, 100%);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--modal-radius);
+            box-shadow: var(--modal-shadow);
+            padding: 18px;
+        }
+        .ppr-confirm-title {
+            margin: 0;
+            color: var(--modal-accent-text);
+            font-size: 0.95rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .ppr-confirm-text {
+            margin: 10px 0 0;
+            color: var(--text-main);
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+        .ppr-confirm-number {
+            color: var(--modal-accent-text);
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .ppr-confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .ppr-confirm-actions .btn {
+            width: auto;
+            margin-top: 0;
+            min-width: 86px;
+        }
+        .ppr-confirm-actions .btn.no {
+            background: #2b2c2d;
+            border-color: var(--border);
+            color: var(--text-main);
+        }
+        .ppr-confirm-actions .btn.yes {
+            background: var(--modal-accent-bg);
+            border-color: var(--modal-accent-border);
+            color: var(--modal-accent-text);
+        }
+
+        .import-note-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 4300;
+            background: var(--overlay-bg);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .import-note-overlay.visible { display: flex; }
+        .import-note-modal {
+            width: min(500px, 100%);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--modal-radius);
+            box-shadow: var(--modal-shadow);
+            padding: 18px;
+        }
+        .import-note-title {
+            margin: 0;
+            color: var(--modal-accent-text);
+            font-size: 0.95rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .import-note-text {
+            margin: 10px 0 0;
+            color: var(--text-main);
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+        .import-note-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 14px;
+        }
+        .import-note-actions .btn {
+            width: auto;
+            margin-top: 0;
+            min-width: 96px;
+            background: var(--modal-accent-bg);
+            border-color: var(--modal-accent-border);
+            color: var(--modal-accent-text);
         }
     </style>
 </head>
@@ -633,6 +1000,44 @@
         <p id="disclaimer-text">This is only a testing tool, not a source of truth. Always check your bids against the PWA and SRH.</p>
         <div class="disclaimer-actions">
             <button class="btn" id="disclaimer-ack-btn" type="button">I Understand</button>
+        </div>
+    </div>
+</div>
+
+<div id="ppr-overlay" class="ppr-overlay" role="dialog" aria-modal="true" aria-labelledby="ppr-title" aria-describedby="ppr-subtitle">
+    <div class="ppr-modal">
+        <div class="ppr-head">
+            <h3 id="ppr-title">Import Crew Schedule</h3>
+        </div>
+        <div class="ppr-body">
+            <p class="ppr-subtitle" id="ppr-subtitle">Enter your 9-digit PPR number to map your lines correctly.</p>
+            <input id="ppr-input" class="ppr-input" type="text" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="123456789" aria-label="9 digit PPR number">
+            <p class="ppr-error" id="ppr-error"></p>
+            <div class="ppr-actions">
+                <button class="btn cancel" id="ppr-cancel-btn" type="button">Cancel</button>
+                <button class="btn confirm" id="ppr-confirm-btn" type="button">Continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ppr-confirm-overlay" class="ppr-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="ppr-confirm-title" aria-describedby="ppr-confirm-text">
+    <div class="ppr-confirm-modal">
+        <h3 class="ppr-confirm-title" id="ppr-confirm-title">Confirm Converted PPR</h3>
+        <p class="ppr-confirm-text" id="ppr-confirm-text">Confirm 9-digit PPR is <span class="ppr-confirm-number" id="ppr-confirm-number">000000000</span>?</p>
+        <div class="ppr-confirm-actions">
+            <button class="btn no" id="ppr-confirm-no-btn" type="button">No</button>
+            <button class="btn yes" id="ppr-confirm-yes-btn" type="button">Yes</button>
+        </div>
+    </div>
+</div>
+
+<div id="import-note-overlay" class="import-note-overlay" role="dialog" aria-modal="true" aria-labelledby="import-note-title" aria-describedby="import-note-text">
+    <div class="import-note-modal">
+        <h3 class="import-note-title" id="import-note-title">Import Note</h3>
+        <p class="import-note-text" id="import-note-text">Employee appears to have a line for this bid period.</p>
+        <div class="import-note-actions">
+            <button class="btn" id="import-note-ok-btn" type="button">OK</button>
         </div>
     </div>
 </div>
@@ -979,6 +1384,200 @@ function showFirstVisitDisclaimer() {
             document.body.style.overflow = '';
         }
     }, { once: true });
+}
+
+function confirmConvertedEmployeeId(candidateId) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('ppr-confirm-overlay');
+        const number = document.getElementById('ppr-confirm-number');
+        const noBtn = document.getElementById('ppr-confirm-no-btn');
+        const yesBtn = document.getElementById('ppr-confirm-yes-btn');
+
+        if (!overlay || !number || !noBtn || !yesBtn) {
+            resolve(confirm(`Confirm 9-digit PPR is ${candidateId}?`));
+            return;
+        }
+
+        number.textContent = candidateId;
+        overlay.classList.add('visible');
+
+        const cleanup = () => {
+            overlay.classList.remove('visible');
+            noBtn.removeEventListener('click', onNo);
+            yesBtn.removeEventListener('click', onYes);
+            overlay.removeEventListener('click', onOverlayClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+
+        const closeWith = value => {
+            cleanup();
+            resolve(value);
+        };
+
+        const onNo = () => closeWith(false);
+        const onYes = () => closeWith(true);
+
+        const onOverlayClick = e => {
+            if (e.target === overlay) closeWith(false);
+        };
+
+        const onKeyDown = e => {
+            if (!overlay.classList.contains('visible')) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeWith(false);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                closeWith(true);
+            }
+        };
+
+        noBtn.addEventListener('click', onNo);
+        yesBtn.addEventListener('click', onYes);
+        overlay.addEventListener('click', onOverlayClick);
+        document.addEventListener('keydown', onKeyDown);
+
+        setTimeout(() => yesBtn.focus(), 0);
+    });
+}
+
+function showNoReserveNotice(employeeId, bidPeriodLabel) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('import-note-overlay');
+        const text = document.getElementById('import-note-text');
+        const okBtn = document.getElementById('import-note-ok-btn');
+
+        const safeEmployeeId = String(employeeId || '').trim() || 'This employee';
+        const safeBidPeriod = String(bidPeriodLabel || '').trim() || 'this bid period';
+        const message = `${safeEmployeeId} appears to have a line for ${safeBidPeriod}.`;
+
+        if (!overlay || !text || !okBtn) {
+            alert(message);
+            resolve();
+            return;
+        }
+
+        text.textContent = message;
+        overlay.classList.add('visible');
+
+        const cleanup = () => {
+            overlay.classList.remove('visible');
+            okBtn.removeEventListener('click', onOk);
+            overlay.removeEventListener('click', onOverlayClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+
+        const close = () => {
+            cleanup();
+            resolve();
+        };
+
+        const onOk = () => close();
+        const onOverlayClick = e => {
+            if (e.target === overlay) close();
+        };
+        const onKeyDown = e => {
+            if (!overlay.classList.contains('visible')) return;
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                e.preventDefault();
+                close();
+            }
+        };
+
+        okBtn.addEventListener('click', onOk);
+        overlay.addEventListener('click', onOverlayClick);
+        document.addEventListener('keydown', onKeyDown);
+        setTimeout(() => okBtn.focus(), 0);
+    });
+}
+
+function askForEmployeeId(fileName = '') {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('ppr-overlay');
+        const subtitle = document.getElementById('ppr-subtitle');
+        const input = document.getElementById('ppr-input');
+        const error = document.getElementById('ppr-error');
+        const cancelBtn = document.getElementById('ppr-cancel-btn');
+        const confirmBtn = document.getElementById('ppr-confirm-btn');
+
+        if (!overlay || !subtitle || !input || !error || !cancelBtn || !confirmBtn) {
+            const fallback = prompt('Enter 9 digit PPR:');
+            resolve(fallback ? fallback.trim() : null);
+            return;
+        }
+
+        const safeName = fileName || 'selected file';
+        subtitle.textContent = `Enter your 9-digit PPR number for ${safeName}.`;
+        input.value = '';
+        error.textContent = '';
+        overlay.classList.add('visible');
+
+        const cleanup = () => {
+            overlay.classList.remove('visible');
+            cancelBtn.removeEventListener('click', onCancel);
+            confirmBtn.removeEventListener('click', onConfirm);
+            overlay.removeEventListener('click', onOverlayClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+
+        const closeWith = value => {
+            cleanup();
+            resolve(value);
+        };
+
+        const onCancel = () => closeWith(null);
+
+        const onConfirm = async () => {
+            const value = input.value.trim();
+
+            if (/^\d{9}$/.test(value)) {
+                closeWith(value);
+                return;
+            }
+
+            if (/^\d{6}$/.test(value)) {
+                const candidate = `0${value}00`;
+                const accepted = await confirmConvertedEmployeeId(candidate);
+                if (accepted) {
+                    closeWith(candidate);
+                    return;
+                }
+                error.textContent = 'Please confirm the converted value or enter your full 9-digit PPR.';
+                input.focus();
+                input.select();
+                return;
+            }
+
+            error.textContent = 'Please enter exactly 9 digits.';
+            input.focus();
+            input.select();
+        };
+
+        const onOverlayClick = e => {
+            if (e.target === overlay) closeWith(null);
+        };
+
+        const onKeyDown = e => {
+            if (!overlay.classList.contains('visible')) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeWith(null);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                onConfirm();
+            }
+        };
+
+        cancelBtn.addEventListener('click', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        overlay.addEventListener('click', onOverlayClick);
+        document.addEventListener('keydown', onKeyDown);
+
+        setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 0);
+    });
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1477,6 +2076,27 @@ function parserToISO(dateObj) {
     return dateObj.toISOString().slice(0, 10);
 }
 
+function parserFormatBidPeriodLabel(startDate, endDate) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (!startDate || !endDate) return 'this bid period';
+
+    const sMon = months[startDate.getUTCMonth()];
+    const eMon = months[endDate.getUTCMonth()];
+    const sDay = startDate.getUTCDate();
+    const eDay = endDate.getUTCDate();
+    const sYear = startDate.getUTCFullYear();
+    const eYear = endDate.getUTCFullYear();
+
+    if (sYear === eYear) {
+        if (sMon === eMon) {
+            return `${sMon} ${sDay}-${eDay}, ${sYear}`;
+        }
+        return `${sMon} ${sDay}-${eMon} ${eDay}, ${sYear}`;
+    }
+
+    return `${sMon} ${sDay}, ${sYear}-${eMon} ${eDay}, ${eYear}`;
+}
+
 function parserDetectBidPeriod(title) {
     const lower = (title || '').toLowerCase();
     let monthIdx = null;
@@ -1530,6 +2150,33 @@ function parserFillRange(scheduleMap, codeValue, eventStart, eventEnd, bidStart,
     }
 }
 
+function parserFindEmployeeButton(doc, employeeNeedle) {
+    const needle = String(employeeNeedle || '').trim();
+    if (!/^\d{9}$/.test(needle)) {
+        throw new Error('Employee number must be 9 digits.');
+    }
+
+    const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const tokenRe = new RegExp(`(?:^|\\D)${escapeRegExp(needle)}(?:\\D|$)`);
+    const candidates = [...doc.querySelectorAll('input[value]')];
+
+    // Prefer an exact 9-digit token match so we do not accidentally select a different employee.
+    const exactTokenMatches = candidates.filter(el => {
+        const raw = el.getAttribute('value') || '';
+        return tokenRe.test(raw);
+    });
+
+    if (exactTokenMatches.length === 1) {
+        return exactTokenMatches[0];
+    }
+
+    if (exactTokenMatches.length > 1) {
+        throw new Error(`Multiple employees matched ${needle}. Please verify the HTML export.`);
+    }
+
+    return null;
+}
+
 function parseCompositeHTMLToImportPayload(htmlText, employeeId) {
     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
     const title = parserCleanText(doc.querySelector('title')?.textContent || '');
@@ -1539,9 +2186,7 @@ function parseCompositeHTMLToImportPayload(htmlText, employeeId) {
     }
 
     const employeeNeedle = String(employeeId || '').trim();
-    const btn = [...doc.querySelectorAll('input[value]')].find(el =>
-        (el.getAttribute('value') || '').includes(employeeNeedle)
-    );
+    const btn = parserFindEmployeeButton(doc, employeeNeedle);
     if (!btn) {
         throw new Error(`Employee ${employeeNeedle} not found in file.`);
     }
@@ -1591,11 +2236,14 @@ function parseCompositeHTMLToImportPayload(htmlText, employeeId) {
     });
 
     const divTextClean = parserCleanText(employeeDiv.textContent || '');
-    if (divTextClean.includes('Awarded Reserve Days:')) {
+    const hasAwardedReserveDays = divTextClean.includes('Awarded Reserve Days:');
+    let reserveEntryCount = 0;
+    if (hasAwardedReserveDays) {
         const reserveBlock = divTextClean.split('Awarded Reserve Days:')[1] || '';
         const reserveRe = /(\d{4}-\d{2}-\d{2})\s*\(RES\)/g;
         let m;
         while ((m = reserveRe.exec(reserveBlock)) !== null) {
+            reserveEntryCount += 1;
             if (schedule.has(m[1]) && schedule.get(m[1]) === null) {
                 schedule.set(m[1], 'R');
             }
@@ -1613,7 +2261,13 @@ function parseCompositeHTMLToImportPayload(htmlText, employeeId) {
         '1': {
             current,
             desired: [...current],
-        }
+        },
+        _importMeta: {
+            employeeId: employeeNeedle,
+            bidPeriodLabel: parserFormatBidPeriodLabel(bidStart, bidEnd),
+            hasAwardedReserveDays,
+            reserveEntryCount,
+        },
     };
 }
 
@@ -1668,19 +2322,19 @@ async function importData(event) {
         }
 
         if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
-            const employeeId = prompt('Enter employee number from the composite report:');
+            const employeeId = await askForEmployeeId(file.name || 'selected file');
             if (employeeId === null) return;
-            const trimmedEmployeeId = employeeId.trim();
-            if (!trimmedEmployeeId) {
-                alert('Employee number is required for HTML import.');
-                return;
-            }
 
             const htmlText = await file.text();
-            const payload = parseCompositeHTMLToImportPayload(htmlText, trimmedEmployeeId);
+            const payload = parseCompositeHTMLToImportPayload(htmlText, employeeId);
 
             applyImportedData(payload);
             save(); renderAll();
+
+            const importMeta = payload && payload._importMeta;
+            if (importMeta && (!importMeta.hasAwardedReserveDays || importMeta.reserveEntryCount === 0)) {
+                await showNoReserveNotice(importMeta.employeeId, importMeta.bidPeriodLabel);
+            }
             return;
         }
 
@@ -1876,12 +2530,11 @@ function getXBlocks(days) {
     return blocks;
 }
 
-function analyzePCS(mIdx) {
-    const curr = monthData[mIdx].current;
-    const des  = monthData[mIdx].desired;
+function analyzePCSPair(mIdx, curr, des) {
     const { minWork, maxXblocks } = getSettings();
     const lastIdx = curr.length - 1;
     const violations = [];
+    const p9AddedIVDOnR = new Set();
 
     // D2: X count must match
     const currX = curr.filter(d => d === 'X').length;
@@ -1915,6 +2568,18 @@ function analyzePCS(mIdx) {
                 message: `${calDate(mIdx, i)}: X cannot be placed on a ${curr[i]} day`,
             });
         }
+
+        // P9: IVD may be newly placed only on days that are R in current.
+        if (des[i] === 'IVD' && curr[i] !== 'IVD') {
+            if (curr[i] === 'R') {
+                p9AddedIVDOnR.add(i);
+            } else {
+                violations.push({
+                    rule: 'P9',
+                    message: `${calDate(mIdx, i)}: IVD can only be newly placed on an R day`,
+                });
+            }
+        }
     }
 
     // Precompute opening conditions
@@ -1941,13 +2606,28 @@ function analyzePCS(mIdx) {
         // E1: block touches the last day of the period
         if (block.end === lastIdx) continue;
 
-        // E2: block touches CQ in desired, and the matching block in current was also short
-        const leftDay  = block.start > 0      ? des[block.start - 1] : null;
-        const rightDay = block.end < lastIdx  ? des[block.end + 1]   : null;
-        if (leftDay === 'CQ' || rightDay === 'CQ') {
+        // E2: short block can remain short when it touches CQ/IVD and the matching
+        //     current short block also touched CQ/IVD.
+        const leftDay  = block.start > 0     ? des[block.start - 1] : null;
+        const rightDay = block.end < lastIdx ? des[block.end + 1]   : null;
+        const desiredTouchesCQorIVD =
+            leftDay === 'CQ' || rightDay === 'CQ' || leftDay === 'IVD' || rightDay === 'IVD';
+
+        if (desiredTouchesCQorIVD) {
             const match = currWorkBlocks.find(b => b.start <= block.end && b.end >= block.start);
-            if (match && match.len < minWork) continue;
+            if (match && match.len < minWork) {
+                const currLeftNeighbor = match.start > 0     ? curr[match.start - 1] : null;
+                const currRightNeighbor = match.end < lastIdx ? curr[match.end + 1] : null;
+                const currentTouchesCQorIVD =
+                    currLeftNeighbor === 'CQ' || currRightNeighbor === 'CQ' ||
+                    currLeftNeighbor === 'IVD' || currRightNeighbor === 'IVD';
+                if (currentTouchesCQorIVD) continue;
+            }
         }
+
+        // P9: if this short block is created by adding IVD on an R day next to it,
+        // it is allowed even if below minWork.
+        if (p9AddedIVDOnR.has(block.start - 1) || p9AddedIVDOnR.has(block.end + 1)) continue;
 
         // P5: current opened with a short work block; desired short block overlaps original
         if (currOpenShort) {
@@ -1987,6 +2667,89 @@ function analyzePCS(mIdx) {
         valid: violations.length === 0,
         summary: { adds, removes, xBlockCount: desXBlocks.length },
     };
+}
+
+function analyzePCS(mIdx) {
+    const curr = monthData[mIdx].current;
+    const des  = monthData[mIdx].desired;
+    return analyzePCSPair(mIdx, curr, des);
+}
+
+function getXMovePairs(curr, des) {
+    const removed = [];
+    const added = [];
+    curr.forEach((code, i) => {
+        if (code === 'X' && des[i] === 'R') removed.push(i);
+        if (code === 'R' && des[i] === 'X') added.push(i);
+    });
+    return { removed, added };
+}
+
+function applyXMovesOnly(curr, des) {
+    const next = [...curr];
+    const { removed, added } = getXMovePairs(curr, des);
+    removed.forEach(i => { next[i] = 'R'; });
+    added.forEach(i => { next[i] = 'X'; });
+    return next;
+}
+
+function getIVDChangeIndices(curr, des) {
+    const idxs = [];
+    for (let i = 0; i < curr.length; i++) {
+        if (curr[i] === des[i]) continue;
+        if (curr[i] === 'IVD' || des[i] === 'IVD') idxs.push(i);
+    }
+    return idxs;
+}
+
+function applyIVDOnly(curr, des) {
+    const next = [...curr];
+    getIVDChangeIndices(curr, des).forEach(i => {
+        next[i] = des[i];
+    });
+    return next;
+}
+
+function findTwoStepPCSPlans(mIdx) {
+    const curr = monthData[mIdx].current;
+    const des = monthData[mIdx].desired;
+    const diffIdxs = curr.map((v, i) => (v === des[i] ? -1 : i)).filter(i => i >= 0);
+
+    if (diffIdxs.length === 0) return [];
+
+    const ivdIdxs = getIVDChangeIndices(curr, des);
+    const { removed, added } = getXMovePairs(curr, des);
+    const hasXMoves = removed.length > 0 || added.length > 0;
+    const onlyXOrIVD = diffIdxs.every(i => {
+        const c = curr[i], d = des[i];
+        if ((c === 'X' && d === 'R') || (c === 'R' && d === 'X')) return true;
+        if (c === 'IVD' || d === 'IVD') return true;
+        return false;
+    });
+
+    if (!hasXMoves || ivdIdxs.length === 0 || !onlyXOrIVD) return [];
+
+    const plans = [];
+
+    const xThenIvdStep1 = applyXMovesOnly(curr, des);
+    const xThenIvdStep2 = applyIVDOnly(xThenIvdStep1, des);
+    const xThenIvdA1 = analyzePCSPair(mIdx, curr, xThenIvdStep1);
+    const xThenIvdA2 = analyzePCSPair(mIdx, xThenIvdStep1, xThenIvdStep2);
+    if (!xThenIvdA1.blocked && xThenIvdA1.valid && !xThenIvdA2.blocked && xThenIvdA2.valid &&
+        xThenIvdStep2.every((v, i) => v === des[i])) {
+        plans.push({ order: 'X_THEN_IVD' });
+    }
+
+    const ivdThenXStep1 = applyIVDOnly(curr, des);
+    const ivdThenXStep2 = applyXMovesOnly(ivdThenXStep1, des);
+    const ivdThenXA1 = analyzePCSPair(mIdx, curr, ivdThenXStep1);
+    const ivdThenXA2 = analyzePCSPair(mIdx, ivdThenXStep1, ivdThenXStep2);
+    if (!ivdThenXA1.blocked && ivdThenXA1.valid && !ivdThenXA2.blocked && ivdThenXA2.valid &&
+        ivdThenXStep2.every((v, i) => v === des[i])) {
+        plans.push({ order: 'IVD_THEN_X' });
+    }
+
+    return plans;
 }
 
 
@@ -2046,12 +2809,54 @@ function buildPCSHTML(mIdx) {
             <div class="pcs-steps">${steps}</div>`;
     }
 
+    const ivdChangedDays = [];
+    curr.forEach((code, i) => {
+        if (code === 'R' && des[i] === 'IVD') ivdChangedDays.push(toCalDay(i));
+    });
+    const ivdLabel = ivdChangedDays.map(d => `${monName} ${d}`).join(', ');
+    const ivdPlacementsHTML = ivdChangedDays.length === 0
+        ? ''
+        : `<div class="pcs-steps-header">IVD Placements</div>
+           <div class="pcs-steps">
+             ${ivdChangedDays.map(d => `<div class="pcs-step"><div class="pcs-step-text">Place IVD on ${monName} ${d}</div></div>`).join('')}
+           </div>`;
+
     if (result.valid) {
         return `<div class="pcs-status-bar legal">
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is valid</span>
         </div>
-        ${changesHTML}`;
+        ${changesHTML}
+        ${ivdPlacementsHTML}`;
+    }
+
+    const twoStepPlans = findTwoStepPCSPlans(mIdx);
+    if (twoStepPlans.length > 0) {
+        const cards = twoStepPlans.map((plan, idx) => {
+            const step1 = plan.order === 'X_THEN_IVD'
+                ? 'Run 1: Apply X-day move(s).'
+                : `Run 1: Apply IVD change(s)${ivdLabel ? ` (${ivdLabel})` : ''}.`;
+            const step2 = plan.order === 'X_THEN_IVD'
+                ? `Run 2: Apply IVD change(s)${ivdLabel ? ` (${ivdLabel})` : ''}.`
+                : 'Run 2: Apply X-day move(s).';
+            return `<div class="pcs-step">
+                <div class="pcs-step-num">${idx + 1}</div>
+                <div class="pcs-step-text">
+                    <div><b>Option ${idx + 1}</b></div>
+                    <div class="pcs-step-note">${step1}</div>
+                    <div class="pcs-step-note">${step2}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div class="pcs-status-bar legal">
+            <span class="pcs-status-icon">✓</span>
+            <span>Desired schedule is reachable in 2 PCS runs.</span>
+        </div>
+        <div class="pcs-steps-header">Two-Run PCS Options</div>
+        <div class="pcs-steps">${cards}</div>
+        ${changesHTML}
+        ${ivdPlacementsHTML}`;
     }
 
     const violationsHTML = `<div class="pcs-violations">
@@ -2062,7 +2867,8 @@ function buildPCSHTML(mIdx) {
         <span class="pcs-status-icon">✗</span>
         <span>${result.violations.length} violation(s) found</span>
     </div>
-    ${violationsHTML}`;
+    ${violationsHTML}
+    ${ivdPlacementsHTML}`;
 }
 
 
