@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A350 Memory Items — Flashcard Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@500;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --border: #1e2d42;
+    --accent: #00b4ff;
+    --accent2: #ff6b35;
+    --warn: #ffd166;
+    --green: #06ffa5;
+    --text: #e0eaf8;
+    --muted: #4a6080;
+    --card-bg: #111b2a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo span {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-left: 10px;
+    letter-spacing: 0.15em;
+  }
+  .badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--warn);
+    border: 1px solid rgba(255,209,102,0.3);
+    padding: 3px 10px;
+    letter-spacing: 0.15em;
+  }
+
+  .cat-nav {
+    position: relative; z-index: 1;
+    padding: 10px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .cat-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 0.72rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 14px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    cursor: pointer; transition: all 0.12s;
+  }
+  .cat-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cat-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
+
+  .prog-bar {
+    position: relative; z-index: 1;
+    padding: 10px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .track { flex: 1; height: 2px; background: var(--border); }
+  .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.3s ease; }
+  .prog-label { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+  .scores { display: flex; gap: 14px; }
+  .sc { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; display: flex; align-items: center; gap: 5px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .d-g { background: var(--green); }
+  .d-r { background: var(--accent2); }
+
+  main {
+    position: relative; z-index: 1;
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 28px 16px;
+  }
+
+  .card-wrap { width: 100%; max-width: 680px; perspective: 1200px; }
+
+  .card {
+    width: 100%; height: clamp(260px, 55vh, 480px);
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4,0.2,0.2,1);
+    position: relative;
+    animation: cardIn 0.3s ease;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 32px 36px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .face::before, .face::after {
+    content: ''; position: absolute;
+    width: 12px; height: 12px;
+    border-color: var(--accent); border-style: solid; opacity: 0.4;
+  }
+  .face::before { top: 7px; left: 7px; border-width: 1px 0 0 1px; }
+  .face::after  { bottom: 7px; right: 7px; border-width: 0 1px 1px 0; }
+
+  .back { transform: rotateY(180deg); border-color: rgba(0,180,255,0.25); }
+  .back::before, .back::after { border-color: var(--green); }
+
+  .card-section {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px;
+  }
+  .card-q {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 1.9rem; line-height: 1.15;
+    flex: 1; display: flex; align-items: center;
+  }
+  .card-hint {
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.68rem; color: var(--muted); margin-top: 18px;
+  }
+
+  .ans-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 18px;
+  }
+  .ans-body {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem; line-height: 1.9; color: var(--text);
+    flex: 1; overflow-y: auto;
+  }
+  .ans-body .row {
+    display: flex; gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding: 3px 0;
+  }
+  .ans-body .row-action { flex: 1; color: var(--text); }
+  .ans-body .row-value  { color: var(--accent); text-align: right; font-weight: bold; }
+  .ans-body .divider    { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.15em; margin: 10px 0 6px; }
+  .ans-body .plain      { color: var(--text); }
+  .ans-body .highlight  { color: var(--accent2); font-size: 1.3rem; }
+  .ans-body .warn       { color: var(--warn); }
+
+  .controls {
+    margin-top: 20px; display: flex; gap: 10px;
+    width: 100%; max-width: 680px; justify-content: center;
+  }
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 0.82rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 9px 28px; border: 1px solid;
+    background: transparent; cursor: pointer; transition: all 0.12s;
+  }
+  .row-btns { display: flex; gap: 10px; width: 100%; justify-content: center; }
+  .btn-flip  { border-color: var(--accent); color: var(--accent); flex: 2; }
+  .btn-flip:hover  { background: var(--accent); color: #000; }
+  .btn-skip  { border-color: var(--border); color: var(--muted); flex: 1; }
+  .btn-skip:hover  { border-color: var(--text); color: var(--text); }
+  .btn-got   { border-color: var(--green); color: var(--green); flex: 2; }
+  .btn-got:hover   { background: var(--green); color: #000; }
+  .btn-miss  { border-color: var(--accent2); color: var(--accent2); flex: 2; }
+  .btn-miss:hover  { background: var(--accent2); color: #000; }
+
+  .complete { display: none; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+  .complete.show { display: flex; }
+  .hide { display: none !important; }
+
+  .done-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900; font-size: 2.8rem;
+    color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .done-stats { display: flex; gap: 36px; }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat-n { font-family: 'Share Tech Mono', monospace; font-size: 2.2rem; }
+  .stat-l { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+  .btn-restart {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 10px 32px; border: 1px solid var(--accent);
+    background: transparent; color: var(--accent); cursor: pointer; transition: all 0.12s;
+  }
+  .btn-restart:hover { background: var(--accent); color: #000; }
+  .btn-missed { border-color: var(--warn); color: var(--warn); }
+  .btn-missed:hover { background: var(--warn); color: #000; }
+
+  .kb {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem; color: var(--muted); margin-top: 10px; letter-spacing: 0.08em;
+  }
+  kbd { background: var(--border); padding: 1px 5px; border: 1px solid var(--muted); font-family: inherit; font-size: inherit; }
+
+  footer {
+    position: relative; z-index: 1;
+    padding: 10px 28px; border-top: 1px solid var(--border);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em;
+    display: flex; justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A350 <span>MEMORY ITEMS &amp; LIMITATIONS</span></div>
+  <div class="badge">⚠ TRAINING USE ONLY</div>
+</header>
+
+<div class="cat-nav" id="catNav"></div>
+
+<div class="prog-bar">
+  <div class="track"><div class="fill" id="fill" style="width:0%"></div></div>
+  <div class="prog-label" id="progLabel">—</div>
+  <div class="scores">
+    <div class="sc"><div class="dot d-g"></div><span id="nCorrect">0</span></div>
+    <div class="sc"><div class="dot d-r"></div><span id="nWrong">0</span></div>
+  </div>
+</div>
+
+<main>
+  <div class="card-wrap" id="cardWrap">
+    <div class="card" id="card" onclick="flip()">
+      <div class="face front">
+        <div class="card-section" id="cSection"></div>
+        <div class="card-q" id="cQ"></div>
+        <div class="card-hint">tap or press <kbd>SPACE</kbd> to reveal</div>
+      </div>
+      <div class="face back">
+        <div class="ans-label">&#9654; Answer</div>
+        <div class="ans-body" id="cA"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="row-btns" id="rFlip">
+      <button class="btn btn-flip" onclick="flip()">Reveal</button>
+      <button class="btn btn-skip" onclick="skip()">Skip</button>
+    </div>
+    <div class="row-btns" id="rFeedback" style="display:none">
+      <button class="btn btn-miss" onclick="mark(false)">&#10007; Missed</button>
+      <button class="btn btn-got"  onclick="mark(true)">&#10003; Got It</button>
+    </div>
+  </div>
+
+  <div class="kb">
+    <kbd>SPACE</kbd> flip &nbsp;&middot;&nbsp; <kbd>&rarr;</kbd> got it &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> missed &nbsp;&middot;&nbsp; <kbd>S</kbd> skip
+  </div>
+
+  <div class="complete" id="complete">
+    <div class="done-title">Deck Complete</div>
+    <div class="done-stats">
+      <div class="stat"><div class="stat-n" style="color:var(--green)" id="dCorrect">0</div><div class="stat-l">Correct</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--accent2)" id="dWrong">0</div><div class="stat-l">Missed</div></div>
+      <div class="stat"><div class="stat-n" style="color:var(--accent)" id="dPct">0%</div><div class="stat-l">Score</div></div>
+    </div>
+    <button class="btn-restart" onclick="restart()">Restart</button>
+    <button class="btn-restart btn-missed" onclick="reviewMissed()">Review Missed</button>
+  </div>
+</main>
+
+<footer>
+  <span>Delta Flight Training &mdash; For Training Use Only</span>
+  <span id="footerR"></span>
+</footer>
+
+<script>
+const CARDS = [
+  { cat: "Limitations", sec: "General",
+    q: "Maximum Operating Altitude",
+    a: `<div class="highlight">43,100 ft</div><div class="plain">pressure altitude</div>` },
+
+  { cat: "Limitations", sec: "General",
+    q: "Maximum Takeoff &amp; Landing Tailwind Component",
+    a: `<div class="highlight">15 knots</div><div class="plain">or as permitted by the Company Pages</div>` },
+
+  { cat: "Limitations", sec: "General — EP Aircraft",
+    q: "Maximum Takeoff &amp; Landing Tailwind Component (Trent XWB-84EP)",
+    a: `<div class="highlight warn">10 knots</div><div class="plain">Until further notice &mdash; expected to be lifted April 2026</div>` },
+
+  { cat: "Limitations", sec: "General",
+    q: "Crosswind limit — Takeoff",
+    a: `<div class="highlight">35 knots</div><div class="plain">including gusts &mdash; same for both engine variants</div>` },
+
+  { cat: "Limitations", sec: "General",
+    q: "Crosswind limit — Landing",
+    a: `<div class="highlight">40 knots</div><div class="plain">including gusts &mdash; same for both engine variants</div>` },
+
+  { cat: "Limitations", sec: "Autoflight",
+    q: "Autopilot — minimum engagement after Takeoff",
+    a: `<div class="highlight">5 seconds</div><div class="plain">after lift-off</div>` },
+
+  { cat: "Limitations", sec: "Autoflight",
+    q: "Autopilot — minimum engagement altitude after manual go-around",
+    a: `<div class="highlight">100 ft AGL</div>` },
+
+  { cat: "Limitations", sec: "Autoland Wind Limits",
+    q: "Autoland wind limits",
+    a: `
+      <div class="row"><div class="row-action">Headwind</div><div class="row-value">40 kts</div></div>
+      <div class="row"><div class="row-action">Tailwind</div><div class="row-value">15 kts</div></div>
+      <div class="row"><div class="row-action">Crosswind</div><div class="row-value">30 kts</div></div>` },
+
+  { cat: "Limitations", sec: "Flight Controls",
+    q: "Maximum altitude for flap extension",
+    a: `<div class="highlight">20,000 ft</div>` },
+
+  { cat: "Memory Items", sec: "Loss of Braking",
+    q: "Loss of Braking",
+    a: `
+      <div class="row"><div class="row-action">REV</div><div class="row-value">MAX</div></div>
+      <div class="row"><div class="row-action">BRAKE PEDALS</div><div class="row-value">RELEASE</div></div>
+      <div class="row"><div class="row-action">A-SKID OFF</div><div class="row-value">ORDER</div></div>
+      <div class="row"><div class="row-action">A-SKID</div><div class="row-value">OFF</div></div>
+      <div class="row"><div class="row-action">BRAKE PEDALS</div><div class="row-value">PRESS</div></div>
+      <div class="divider">&#9679; If still no braking:</div>
+      <div class="row"><div class="row-action">PARK BRK</div><div class="row-value">USE</div></div>` },
+
+  { cat: "Memory Items", sec: "Emergency Descent",
+    q: "Emergency Descent",
+    a: `
+      <div class="divider">If cabin alt &gt; 10,000 ft:</div>
+      <div class="row"><div class="row-action">CREW OXY MASKS</div><div class="row-value">USE</div></div>
+      <div class="row"><div class="row-action">SIGNS</div><div class="row-value">ON</div></div>
+      <div class="row"><div class="row-action">EMER DESCENT</div><div class="row-value">INITIATE</div></div>
+      <div class="divider">Technique: AUTO EMER DESCENT or AFS CP</div>
+      <div class="divider">If A/THR not active:</div>
+      <div class="row"><div class="row-action">ALL THR LEVERS</div><div class="row-value">IDLE</div></div>
+      <div class="row"><div class="row-action">SPEED BRAKES LEVER</div><div class="row-value">FULL</div></div>` },
+
+  { cat: "Memory Items", sec: "Unreliable Airspeed",
+    q: "Unreliable Airspeed Indication",
+    a: `
+      <div class="row"><div class="row-action">A/P</div><div class="row-value">OFF</div></div>
+      <div class="row"><div class="row-action">A/THR</div><div class="row-value">OFF</div></div>
+      <div class="row"><div class="row-action">FD</div><div class="row-value">OFF</div></div>
+      <div class="divider">PITCH / THRUST:</div>
+      <div class="row"><div class="row-action">Below THR RED ALT</div><div class="row-value">12.5&deg; / TOGA</div></div>
+      <div class="row"><div class="row-action">Above THR RED, Below FL100</div><div class="row-value">10&deg; / CLB</div></div>
+      <div class="row"><div class="row-action">Above THR RED, Above FL100</div><div class="row-value">5&deg; / CLB</div></div>
+      <div class="divider">FLAPS:</div>
+      <div class="row"><div class="row-action">CONF 0/1/2/3</div><div class="row-value">MAINTAIN</div></div>
+      <div class="row"><div class="row-action">CONF FULL</div><div class="row-value">SELECT CONF 3</div></div>
+      <div class="row"><div class="row-action">SPEED BRAKES</div><div class="row-value">CHECK RETRACTED</div></div>
+      <div class="row"><div class="row-action">L/G</div><div class="row-value">UP</div></div>` },
+
+  { cat: "Memory Items", sec: "Stall Warning at Liftoff",
+    q: "Stall Warning at Liftoff",
+    a: `
+      <div class="row"><div class="row-action">THRUST</div><div class="row-value">TOGA</div></div>
+      <div class="divider">At the same time:</div>
+      <div class="row"><div class="row-action">PITCH ATTITUDE</div><div class="row-value">12.5&deg;</div></div>
+      <div class="row"><div class="row-action">BANK</div><div class="row-value">WINGS LEVEL</div></div>` },
+
+  { cat: "Evacuation", sec: "Emergency Evacuation Flow",
+    q: "Emergency Evacuation — flow philosophy",
+    a: `
+      <div class="row"><div class="row-action">1</div><div class="row-value warn">STOP</div></div>
+      <div class="row"><div class="row-action">2</div><div class="row-value warn">CONFIGURE</div></div>
+      <div class="row"><div class="row-action">3</div><div class="row-value warn">SHUTDOWN</div></div>
+      <div class="row"><div class="row-action">4</div><div class="row-value warn">EVACUATE</div></div>` },
+];
+
+let deck=[], idx=0, results={}, activeCat="All", flipped=false;
+const CATS=["All",...new Set(CARDS.map(c=>c.cat))];
+
+function buildDeck(cat){
+  deck=CARDS.map((_,i)=>i).filter(i=>cat==="All"||CARDS[i].cat===cat);
+  shuffle(deck); idx=0; results={};
+  deck.forEach(i=>results[i]=null);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+function renderCard(){
+  const card=document.getElementById('card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='';
+  if(idx>=deck.length){showComplete();return;}
+  document.getElementById('cardWrap').classList.remove('hide');
+  document.getElementById('controls').classList.remove('hide');
+  document.querySelector('.kb').style.display='';
+  document.getElementById('complete').classList.remove('show');
+  const d=CARDS[deck[idx]];
+  document.getElementById('cSection').textContent=d.sec;
+  document.getElementById('cQ').innerHTML=d.q;
+  document.getElementById('cA').innerHTML=d.a;
+  flipped=false;
+  card.classList.remove('flipped');
+  document.getElementById('rFlip').style.display='flex';
+  document.getElementById('rFeedback').style.display='none';
+  updateProg();
+}
+
+function updateProg(){
+  const total=deck.length;
+  const correct=Object.values(results).filter(v=>v===true).length;
+  const wrong=Object.values(results).filter(v=>v===false).length;
+  const pct=total>0?(idx/total*100):0;
+  document.getElementById('fill').style.width=pct+'%';
+  document.getElementById('progLabel').textContent=`${Math.min(idx+1,total)} / ${total}`;
+  document.getElementById('nCorrect').textContent=correct;
+  document.getElementById('nWrong').textContent=wrong;
+  document.getElementById('footerR').textContent=`Category: ${activeCat}`;
+}
+
+function flip(){
+  if(idx>=deck.length)return;
+  flipped=!flipped;
+  document.getElementById('card').classList.toggle('flipped',flipped);
+  document.getElementById('rFlip').style.display=flipped?'none':'flex';
+  document.getElementById('rFeedback').style.display=flipped?'flex':'none';
+}
+
+function mark(correct){
+  if(idx>=deck.length)return;
+  results[deck[idx]]=correct; idx++; renderCard();
+}
+
+function skip(){ idx++; renderCard(); }
+
+function showComplete(){
+  document.getElementById('cardWrap').classList.add('hide');
+  document.getElementById('controls').classList.add('hide');
+  document.querySelector('.kb').style.display='none';
+  document.getElementById('complete').classList.add('show');
+  const correct=Object.values(results).filter(v=>v===true).length;
+  const wrong=Object.values(results).filter(v=>v===false).length;
+  const total=correct+wrong;
+  const pct=total>0?Math.round(correct/total*100):0;
+  document.getElementById('dCorrect').textContent=correct;
+  document.getElementById('dWrong').textContent=wrong;
+  document.getElementById('dPct').textContent=pct+'%';
+  document.getElementById('fill').style.width='100%';
+}
+
+function restart(){ buildDeck(activeCat); renderCard(); }
+
+function reviewMissed(){
+  const missed=Object.entries(results).filter(([,v])=>v===false).map(([k])=>+k);
+  if(!missed.length){restart();return;}
+  deck=missed; shuffle(deck); idx=0; results={};
+  deck.forEach(i=>results[i]=null); renderCard();
+}
+
+function buildNav(){
+  const nav=document.getElementById('catNav');
+  CATS.forEach(cat=>{
+    const count=cat==="All"?CARDS.length:CARDS.filter(c=>c.cat===cat).length;
+    const btn=document.createElement('button');
+    btn.className='cat-btn'+(cat===activeCat?' active':'');
+    btn.textContent=`${cat} (${count})`;
+    btn.onclick=()=>{
+      activeCat=cat;
+      document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      buildDeck(cat); renderCard();
+    };
+    nav.appendChild(btn);
+  });
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();flip();}
+  else if(e.code==='ArrowRight'){if(flipped)mark(true);}
+  else if(e.code==='ArrowLeft'){if(flipped)mark(false);}
+  else if(e.code==='KeyS'){skip();}
+});
+
+buildNav(); buildDeck("All"); renderCard();
+</script>
+</body>
+</html>
