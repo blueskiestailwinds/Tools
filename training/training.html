@@ -3,277 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A350 Memory Items — Flashcard Trainer</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@500;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<title>Delta Flight Training</title>
 <style>
-  :root {
-    --bg: #0a0d12;
-    --border: #1e2d42;
-    --accent: #00b4ff;
-    --accent2: #ff6b35;
-    --warn: #ffd166;
-    --green: #06ffa5;
-    --text: #e0eaf8;
-    --muted: #4a6080;
-    --card-bg: #111b2a;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    min-height: 100vh;
+    background: #0a0d12;
+    color: #e0eaf8;
+    font-family: system-ui, sans-serif;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
+  .top-bar {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e2d42;
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #00b4ff; flex-shrink: 0;
   }
 
-  header {
-    position: relative;
-    z-index: 1;
-    padding: 16px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
 
-  .logo {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
-    font-size: 1.4rem;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span {
-    color: var(--muted);
-    font-weight: 500;
-    font-size: 0.9rem;
-    margin-left: 10px;
-    letter-spacing: 0.15em;
-  }
-  .badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--warn);
-    border: 1px solid rgba(255,209,102,0.3);
-    padding: 3px 10px;
-    letter-spacing: 0.15em;
-  }
-
-  .cat-nav {
-    position: relative; z-index: 1;
-    padding: 10px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex; gap: 6px; flex-wrap: wrap;
-  }
-  .cat-btn {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 0.72rem;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 4px 14px;
-    border: 1px solid var(--border);
-    background: transparent; color: var(--muted);
-    cursor: pointer; transition: all 0.12s;
-  }
-  .cat-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .cat-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
-
-  .prog-bar {
-    position: relative; z-index: 1;
-    padding: 10px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 14px;
-  }
-  .track { flex: 1; height: 2px; background: var(--border); }
-  .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.3s ease; }
-  .prog-label { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
-  .scores { display: flex; gap: 14px; }
-  .sc { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; display: flex; align-items: center; gap: 5px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .d-g { background: var(--green); }
-  .d-r { background: var(--accent2); }
-
+  /* Card area fills remaining space */
   main {
-    position: relative; z-index: 1;
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 28px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+    min-height: 0;
   }
 
-  .card-wrap { width: 100%; max-width: 680px; perspective: 1200px; }
+  .card-wrap { flex: 1; perspective: 1000px; min-height: 0; }
 
   .card {
-    width: 100%; height: clamp(260px, 55vh, 480px);
+    width: 100%; height: 100%;
     cursor: pointer;
     transform-style: preserve-3d;
-    transition: transform 0.5s cubic-bezier(0.4,0.2,0.2,1);
+    transition: transform 0.4s cubic-bezier(0.4,0.2,0.2,1);
     position: relative;
-    animation: cardIn 0.3s ease;
   }
   .card.flipped { transform: rotateY(180deg); }
-
-  @keyframes cardIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
 
   .face {
     position: absolute; inset: 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 32px 36px;
+    background: #111b2a;
+    border: 1px solid #1e2d42;
+    padding: 20px;
     display: flex; flex-direction: column;
     overflow: hidden;
   }
-  .face::before, .face::after {
-    content: ''; position: absolute;
-    width: 12px; height: 12px;
-    border-color: var(--accent); border-style: solid; opacity: 0.4;
-  }
-  .face::before { top: 7px; left: 7px; border-width: 1px 0 0 1px; }
-  .face::after  { bottom: 7px; right: 7px; border-width: 0 1px 1px 0; }
+  .back { transform: rotateY(180deg); }
 
-  .back { transform: rotateY(180deg); border-color: rgba(0,180,255,0.25); }
-  .back::before, .back::after { border-color: var(--green); }
+  .card-q { font-size: 1.6rem; font-weight: 700; line-height: 1.25; flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .card-hint { font-size: 0.7rem; color: #4a6080; margin-top: 12px; flex-shrink: 0; }
 
-  .card-section {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 16px;
-  }
-  .card-q {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 1.9rem; line-height: 1.15;
-    flex: 1; display: flex; align-items: center;
-  }
-  .card-hint {
-    font-family: 'Barlow', sans-serif;
-    font-size: 0.68rem; color: var(--muted); margin-top: 18px;
-  }
+  .ans-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: #06ffa5; margin-bottom: 12px; flex-shrink: 0; }
+  .ans-body { font-size: 1rem; line-height: 1.9; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; justify-content: center; }
+  .ans-body .row { display: flex; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
+  .ans-body .row-action { flex: 1; }
+  .ans-body .row-value { color: #00b4ff; text-align: right; font-weight: bold; }
+  .ans-body .divider { font-size: 0.68rem; color: #4a6080; letter-spacing: 0.1em; margin: 10px 0 4px; }
+  .ans-body .highlight { color: #00b4ff; font-size: 1.5rem; font-weight: 700; text-align: center; }
+  .ans-body .plain { color: #e0eaf8; text-align: center; }
+  .ans-body .warn { color: #ffd166; }
 
-  .ans-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase;
-    color: var(--green); margin-bottom: 18px;
-  }
-  .ans-body {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.9rem; line-height: 1.9; color: var(--text);
-    flex: 1; overflow-y: auto;
-  }
-  .ans-body .row {
-    display: flex; gap: 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    padding: 3px 0;
-  }
-  .ans-body .row-action { flex: 1; color: var(--text); }
-  .ans-body .row-value  { color: var(--accent); text-align: right; font-weight: bold; }
-  .ans-body .divider    { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.15em; margin: 10px 0 6px; }
-  .ans-body .plain      { color: var(--text); }
-  .ans-body .highlight  { color: var(--accent2); font-size: 1.3rem; }
-  .ans-body .warn       { color: var(--warn); }
-
-  .controls {
-    margin-top: 20px; display: flex; gap: 10px;
-    width: 100%; max-width: 680px; justify-content: center;
-  }
+  /* Buttons — full width, tall touch targets */
+  .controls { display: flex; gap: 8px; flex-shrink: 0; }
+  .row-btns { display: flex; gap: 8px; width: 100%; }
   .btn {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 0.82rem;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    padding: 9px 28px; border: 1px solid;
-    background: transparent; cursor: pointer; transition: all 0.12s;
+    font-size: 0.9rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0; height: 52px; border: 1px solid;
+    background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
-  .row-btns { display: flex; gap: 10px; width: 100%; justify-content: center; }
-  .btn-flip  { border-color: var(--accent); color: var(--accent); flex: 2; }
-  .btn-flip:hover  { background: var(--accent); color: #000; }
-  .btn-skip  { border-color: var(--border); color: var(--muted); flex: 1; }
-  .btn-skip:hover  { border-color: var(--text); color: var(--text); }
-  .btn-got   { border-color: var(--green); color: var(--green); flex: 2; }
-  .btn-got:hover   { background: var(--green); color: #000; }
-  .btn-miss  { border-color: var(--accent2); color: var(--accent2); flex: 2; }
-  .btn-miss:hover  { background: var(--accent2); color: #000; }
+  .btn-flip  { border-color: #00b4ff; color: #00b4ff; flex: 3; }
+  .btn-skip  { border-color: #1e2d42; color: #4a6080; flex: 1; }
+  .btn-got   { border-color: #06ffa5; color: #06ffa5; flex: 1; }
+  .btn-miss  { border-color: #ff6b35; color: #ff6b35; flex: 1; }
 
-  .complete { display: none; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
-  .complete.show { display: flex; }
   .hide { display: none !important; }
-
-  .done-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900; font-size: 2.8rem;
-    color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .done-stats { display: flex; gap: 36px; }
-  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .stat-n { font-family: 'Share Tech Mono', monospace; font-size: 2.2rem; }
-  .stat-l { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
-
-  .btn-restart {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase;
-    padding: 10px 32px; border: 1px solid var(--accent);
-    background: transparent; color: var(--accent); cursor: pointer; transition: all 0.12s;
-  }
-  .btn-restart:hover { background: var(--accent); color: #000; }
-  .btn-missed { border-color: var(--warn); color: var(--warn); }
-  .btn-missed:hover { background: var(--warn); color: #000; }
-
-  .kb {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.58rem; color: var(--muted); margin-top: 10px; letter-spacing: 0.08em;
-  }
-  kbd { background: var(--border); padding: 1px 5px; border: 1px solid var(--muted); font-family: inherit; font-size: inherit; }
-
-  footer {
-    position: relative; z-index: 1;
-    padding: 10px 28px; border-top: 1px solid var(--border);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em;
-    display: flex; justify-content: space-between;
-  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">A350 <span>MEMORY ITEMS &amp; LIMITATIONS</span></div>
-  <div class="badge">⚠ TRAINING USE ONLY</div>
-</header>
-
-<div class="cat-nav" id="catNav"></div>
-
-<div class="prog-bar">
-  <div class="track"><div class="fill" id="fill" style="width:0%"></div></div>
-  <div class="prog-label" id="progLabel">—</div>
-  <div class="scores">
-    <div class="sc"><div class="dot d-g"></div><span id="nCorrect">0</span></div>
-    <div class="sc"><div class="dot d-r"></div><span id="nWrong">0</span></div>
-  </div>
-</div>
+<div class="top-bar">A350</div>
 
 <main>
   <div class="card-wrap" id="cardWrap">
     <div class="card" id="card" onclick="flip()">
       <div class="face front">
-        <div class="card-section" id="cSection"></div>
-        <div class="card-q" id="cQ"></div>
-        <div class="card-hint">tap or press <kbd>SPACE</kbd> to reveal</div>
+<div class="card-q" id="cQ"></div>
       </div>
       <div class="face back">
         <div class="ans-label">&#9654; Answer</div>
@@ -293,26 +115,7 @@
     </div>
   </div>
 
-  <div class="kb">
-    <kbd>SPACE</kbd> flip &nbsp;&middot;&nbsp; <kbd>&rarr;</kbd> got it &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> missed &nbsp;&middot;&nbsp; <kbd>S</kbd> skip
-  </div>
-
-  <div class="complete" id="complete">
-    <div class="done-title">Deck Complete</div>
-    <div class="done-stats">
-      <div class="stat"><div class="stat-n" style="color:var(--green)" id="dCorrect">0</div><div class="stat-l">Correct</div></div>
-      <div class="stat"><div class="stat-n" style="color:var(--accent2)" id="dWrong">0</div><div class="stat-l">Missed</div></div>
-      <div class="stat"><div class="stat-n" style="color:var(--accent)" id="dPct">0%</div><div class="stat-l">Score</div></div>
-    </div>
-    <button class="btn-restart" onclick="restart()">Restart</button>
-    <button class="btn-restart btn-missed" onclick="reviewMissed()">Review Missed</button>
-  </div>
 </main>
-
-<footer>
-  <span>Delta Flight Training &mdash; For Training Use Only</span>
-  <span id="footerR"></span>
-</footer>
 
 <script>
 const CARDS = [
@@ -405,108 +208,67 @@ const CARDS = [
   { cat: "Evacuation", sec: "Emergency Evacuation Flow",
     q: "Emergency Evacuation — flow philosophy",
     a: `
-      <div class="row"><div class="row-action">1</div><div class="row-value warn">STOP</div></div>
-      <div class="row"><div class="row-action">2</div><div class="row-value warn">CONFIGURE</div></div>
-      <div class="row"><div class="row-action">3</div><div class="row-value warn">SHUTDOWN</div></div>
-      <div class="row"><div class="row-action">4</div><div class="row-value warn">EVACUATE</div></div>` },
+      <div class="highlight warn">STOP</div>
+      <div class="highlight warn">CONFIGURE</div>
+      <div class="highlight warn">SHUTDOWN</div>
+      <div class="highlight warn">EVACUATE</div>` },
 ];
 
-let deck=[], idx=0, results={}, activeCat="All", flipped=false;
+let deck=[], idx=0, weights={}, activeCat="All", flipped=false;
 const CATS=["All",...new Set(CARDS.map(c=>c.cat))];
 
+function baseCards(cat){ return CARDS.map((_,i)=>i).filter(i=>cat==="All"||CARDS[i].cat===cat); }
+
 function buildDeck(cat){
-  deck=CARDS.map((_,i)=>i).filter(i=>cat==="All"||CARDS[i].cat===cat);
-  shuffle(deck); idx=0; results={};
-  deck.forEach(i=>results[i]=null);
+  const base=baseCards(cat);
+  base.forEach(i=>{ if(weights[i]==null) weights[i]=1; });
+  deck=weightedShuffle(base); idx=0;
 }
+
+// Build a shuffled deck where each card appears proportional to its weight
+function weightedShuffle(base){
+  const arr=[];
+  base.forEach(i=>{ for(let w=0;w<(weights[i]||1);w++) arr.push(i); });
+  shuffle(arr); return arr;
+}
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
 
 function renderCard(){
-  const card=document.getElementById('card');
-  card.style.animation='none'; void card.offsetWidth; card.style.animation='';
-  if(idx>=deck.length){showComplete();return;}
-  document.getElementById('cardWrap').classList.remove('hide');
-  document.getElementById('controls').classList.remove('hide');
-  document.querySelector('.kb').style.display='';
-  document.getElementById('complete').classList.remove('show');
+  // Rebuild if exhausted
+  if(idx>=deck.length){ deck=weightedShuffle(baseCards(activeCat)); idx=0; }
   const d=CARDS[deck[idx]];
-  document.getElementById('cSection').textContent=d.sec;
-  document.getElementById('cQ').innerHTML=d.q;
+document.getElementById('cQ').innerHTML=d.q;
   document.getElementById('cA').innerHTML=d.a;
   flipped=false;
-  card.classList.remove('flipped');
+  document.getElementById('card').classList.remove('flipped');
   document.getElementById('rFlip').style.display='flex';
   document.getElementById('rFeedback').style.display='none';
-  updateProg();
 }
 
-function updateProg(){
-  const total=deck.length;
-  const correct=Object.values(results).filter(v=>v===true).length;
-  const wrong=Object.values(results).filter(v=>v===false).length;
-  const pct=total>0?(idx/total*100):0;
-  document.getElementById('fill').style.width=pct+'%';
-  document.getElementById('progLabel').textContent=`${Math.min(idx+1,total)} / ${total}`;
-  document.getElementById('nCorrect').textContent=correct;
-  document.getElementById('nWrong').textContent=wrong;
-  document.getElementById('footerR').textContent=`Category: ${activeCat}`;
-}
 
 function flip(){
-  if(idx>=deck.length)return;
   flipped=!flipped;
   document.getElementById('card').classList.toggle('flipped',flipped);
   document.getElementById('rFlip').style.display=flipped?'none':'flex';
   document.getElementById('rFeedback').style.display=flipped?'flex':'none';
 }
 
-function mark(correct){
-  if(idx>=deck.length)return;
-  results[deck[idx]]=correct; idx++; renderCard();
+function mark(got){
+  const i=deck[idx];
+  if(got){
+    weights[i]=Math.max(1,(weights[i]||1)-1);
+  } else {
+    weights[i]=Math.min(4,(weights[i]||1)+1);
+    // Re-insert card randomly within the next 1-4 positions
+    const insertAt=idx+1+Math.floor(Math.random()*Math.min(4,deck.length-idx));
+    deck.splice(insertAt,0,i);
+  }
+  idx++; renderCard();
 }
 
 function skip(){ idx++; renderCard(); }
 
-function showComplete(){
-  document.getElementById('cardWrap').classList.add('hide');
-  document.getElementById('controls').classList.add('hide');
-  document.querySelector('.kb').style.display='none';
-  document.getElementById('complete').classList.add('show');
-  const correct=Object.values(results).filter(v=>v===true).length;
-  const wrong=Object.values(results).filter(v=>v===false).length;
-  const total=correct+wrong;
-  const pct=total>0?Math.round(correct/total*100):0;
-  document.getElementById('dCorrect').textContent=correct;
-  document.getElementById('dWrong').textContent=wrong;
-  document.getElementById('dPct').textContent=pct+'%';
-  document.getElementById('fill').style.width='100%';
-}
-
-function restart(){ buildDeck(activeCat); renderCard(); }
-
-function reviewMissed(){
-  const missed=Object.entries(results).filter(([,v])=>v===false).map(([k])=>+k);
-  if(!missed.length){restart();return;}
-  deck=missed; shuffle(deck); idx=0; results={};
-  deck.forEach(i=>results[i]=null); renderCard();
-}
-
-function buildNav(){
-  const nav=document.getElementById('catNav');
-  CATS.forEach(cat=>{
-    const count=cat==="All"?CARDS.length:CARDS.filter(c=>c.cat===cat).length;
-    const btn=document.createElement('button');
-    btn.className='cat-btn'+(cat===activeCat?' active':'');
-    btn.textContent=`${cat} (${count})`;
-    btn.onclick=()=>{
-      activeCat=cat;
-      document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      buildDeck(cat); renderCard();
-    };
-    nav.appendChild(btn);
-  });
-}
 
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();flip();}
@@ -515,7 +277,7 @@ document.addEventListener('keydown',e=>{
   else if(e.code==='KeyS'){skip();}
 });
 
-buildNav(); buildDeck("All"); renderCard();
+buildDeck("All"); renderCard();
 </script>
 </body>
 </html>
