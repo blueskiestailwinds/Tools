@@ -238,10 +238,14 @@ function renderCard(){
   // Rebuild if exhausted
   if(idx>=deck.length){ deck=weightedShuffle(baseCards(activeCat)); idx=0; }
   const d=CARDS[deck[idx]];
-document.getElementById('cQ').innerHTML=d.q;
+  document.getElementById('cQ').innerHTML=d.q;
   document.getElementById('cA').innerHTML=d.a;
   flipped=false;
-  document.getElementById('card').classList.remove('flipped');
+  const card=document.getElementById('card');
+  card.style.transition='none';
+  card.classList.remove('flipped');
+  card.offsetHeight; // force reflow
+  card.style.transition='';
   document.getElementById('rFlip').style.display='flex';
   document.getElementById('rFeedback').style.display='none';
 }
