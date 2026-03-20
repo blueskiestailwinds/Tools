@@ -61,6 +61,8 @@ Display rules:
   - fails when: desired differs from current on any day before D+2
   - passes when: all days before D+2 are identical between current and desired
   - UI message: "{date} cannot be changed — it is within the 2-day submission window."
+- Rule D10: If the pathfinder solution requires adding or removing an X day in the current bid period and the current date is the 11th through the 17th, add a caution warning in yellow with the pathfinder result.
+  - example: Today is March 12. The pathfinder solution requires moving an X day from March 29 to March 27. Assume the move is legal for all other rules. Because today is between the 11th and 17th and the current bid period is March 2 - March 31, any moves between March 26 and March 31 may not be allowed immediately. Do not stop the pathfinder. This is cautionary only.
 
 Pathfinding rules:
 

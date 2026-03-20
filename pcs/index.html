@@ -4579,6 +4579,18 @@
                 if (code === 'R' && des[i] === 'X') addedIdx.push(i);
             });
 
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const isCurrentBidPeriod = today >= m.start && today <= m.end;
+            const isD10Window = today.getDate() >= 11 && today.getDate() <= 20;
+            const hasXMove = removedIdx.length > 0 || addedIdx.length > 0;
+            const d10CautionHTML = (isCurrentBidPeriod && isD10Window && hasXMove)
+                ? `<div class="pcs-status-bar warning">
+            <span class="pcs-status-icon">⚠</span>
+            <span>Caution: During the PBS bid award process, a request to move an X-day into or out of the last six days of the current bid period will not be granted.</span>
+        </div>`
+                : '';
+
             let changesHTML = '';
             if (removedIdx.length === 0) {
                 changesHTML = `<div class="pcs-no-path">No changes from current schedule.</div>`;
@@ -4619,6 +4631,7 @@
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is valid</span>
         </div>
+        ${d10CautionHTML}
         ${changesHTML}
         ${ivdPlacementsHTML}`;
             }
@@ -4646,6 +4659,7 @@
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is reachable in 2 PCS runs.</span>
         </div>
+        ${d10CautionHTML}
         <div class="pcs-steps-header">Two-Run PCS Options</div>
         <div class="pcs-steps">${cards}</div>
         ${ivdPlacementsHTML}`;
@@ -4671,6 +4685,7 @@
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is reachable in 2 PCS runs.</span>
         </div>
+        ${d10CautionHTML}
         <div class="pcs-steps-header">Two-Run PCS Options</div>
         <div class="pcs-steps">${cards}</div>`;
             }
