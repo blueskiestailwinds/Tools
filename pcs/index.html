@@ -226,12 +226,31 @@
             overflow: hidden;
         }
 
+        /* CSS-driven layout switch — overrides JS .active when viewport is narrow.
+           Chrome/Edge DevTools device emulation applies CSS metrics reliably even
+           when window.innerWidth hasn't propagated to JS yet. */
+        @media (max-width: 768px) {
+
+            #desktop-root,
+            #desktop-root.active {
+                display: none !important;
+            }
+
+            #mobile-root.active {
+                display: block !important;
+                position: fixed;
+                inset: 0;
+                overflow: hidden;
+            }
+        }
+
 
         /* ═══════════════════════════════════════════════════════════
            DESKTOP
         ═══════════════════════════════════════════════════════════ */
         #desktop-root {
             padding: 20px;
+            overflow-x: auto;
         }
 
         .d-layout {
@@ -250,6 +269,78 @@
             gap: 14px;
             position: sticky;
             top: 20px;
+        }
+
+        .d-sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease;
+            z-index: 220;
+        }
+
+        .d-sidebar-drawer {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            bottom: 16px;
+            width: min(320px, calc(100vw - 32px));
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(24, 25, 26, 0.96);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            transform: translateX(calc(-100% - 24px));
+            transition: transform 0.2s ease;
+            z-index: 230;
+        }
+
+        .desktop-sidebar-open .d-sidebar-backdrop {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .desktop-sidebar-open .d-sidebar-drawer {
+            transform: translateX(0);
+        }
+
+        .d-sidebar-drawer .d-sidebar {
+            width: 100%;
+            position: static;
+            top: auto;
+            gap: 12px;
+        }
+
+        .d-sidebar-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .d-sidebar-head h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 0.92rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .d-sidebar-close {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #2b2c2d;
+            color: var(--text-main);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
         }
 
         .d-main {
@@ -298,7 +389,7 @@
         /* Dual calendar row */
         .d-dual-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -309,6 +400,7 @@
             padding: 18px;
             border: 1px solid var(--border);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            min-width: 0;
         }
 
         .d-cal-panel-header {
@@ -337,6 +429,38 @@
             background: #1a3a2a;
             color: #86efac;
             border: 1px solid #16a34a;
+        }
+
+        .badge-staffing {
+            background: #1e1b4b;
+            color: #a5b4fc;
+            border: 1px solid #4f46e5;
+        }
+
+        /* Reserve Levels calendar: color overrides on .day cells (.sday targets event handlers only) */
+        .day.sday {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .day.sday .day-num {
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 0;
+        }
+
+        .day.sday .day-code {
+            display: none;
+        }
+
+        .day.sday.ok {
+            background: #0000FF;
+            color: white;
+        }
+
+        .day.sday.blocked {
+            background: #000000;
+            color: white;
         }
 
         .d-cal-panel-title {
@@ -376,6 +500,7 @@
             letter-spacing: -0.5px;
         }
 
+
         .d-cal-panel.current-panel .d-calendar-grid .day {
             cursor: crosshair;
         }
@@ -404,6 +529,24 @@
             justify-content: center;
         }
 
+        .d-controls-btn {
+            flex-shrink: 0;
+            padding: 0 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #2b2c2d;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+        }
+
+        .d-controls-btn:hover,
+        .d-sidebar-close:hover {
+            background: #3a3b3c;
+        }
+
         .d-palette .brush {
             width: 46px;
             height: 46px;
@@ -426,6 +569,7 @@
             justify-content: center;
             gap: 8px;
             transition: background 0.15s, border-color 0.15s, color 0.15s;
+            min-width: 0;
             padding: 0;
         }
 
@@ -612,6 +756,14 @@
                 top: 12px;
             }
 
+            .d-sidebar-drawer {
+                top: 12px;
+                left: 12px;
+                bottom: 12px;
+                width: min(300px, calc(100vw - 24px));
+                padding: 12px;
+            }
+
             .card,
             .d-cal-panel,
             .d-pcs-panel,
@@ -647,6 +799,11 @@
 
             .d-palette {
                 padding: 8px 12px;
+            }
+
+            .d-controls-btn {
+                padding: 0 14px;
+                font-size: 0.76rem;
             }
 
             .d-palette .brush {
@@ -696,6 +853,11 @@
             .d-calendar-grid .day-code {
                 font-size: 18px;
             }
+
+            .d-calendar-grid .day.sday .day-num {
+                font-size: 18px;
+            }
+
 
             .d-cal-panel-footer {
                 margin-top: 8px;
@@ -761,6 +923,380 @@
                 font-size: 0.8rem;
                 padding: 10px 0;
             }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           DESKTOP RESPONSIVE — width-based squeeze
+           These override the height query above where they overlap.
+        ═══════════════════════════════════════════════════════════ */
+
+        /* Medium desktop: ~1200–1499px */
+        @media (min-width: 1200px) and (max-width: 1499px) {
+            #desktop-root {
+                padding: 10px;
+            }
+
+            .d-layout {
+                gap: 12px;
+            }
+
+            .d-sidebar {
+                width: 200px;
+                top: 12px;
+            }
+
+            .d-sidebar-drawer {
+                width: min(288px, calc(100vw - 20px));
+                top: 10px;
+                left: 10px;
+                bottom: 10px;
+                padding: 10px;
+            }
+
+            .d-cal-panel {
+                padding: 10px;
+            }
+
+            .d-dual-row {
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+
+            .d-cal-panel-header,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                margin-bottom: 10px;
+            }
+
+            .d-cal-panel-title,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                font-size: 0.92rem;
+            }
+
+            .d-cal-panel-badge {
+                font-size: 0.58rem;
+                padding: 2px 6px;
+            }
+
+            .d-calendar-grid {
+                width: 84%;
+                gap: 3px;
+            }
+
+            .d-calendar-grid .weekday {
+                font-size: 0.63rem;
+                padding-bottom: 2px;
+            }
+
+            .d-calendar-grid .day {
+                aspect-ratio: 1 / 0.7;
+            }
+
+            .d-calendar-grid .day-num {
+                font-size: 10px;
+                margin-bottom: 1px;
+            }
+
+            .d-calendar-grid .day-code {
+                font-size: 15px;
+            }
+
+            .d-calendar-grid .day.sday .day-num {
+                font-size: 15px;
+            }
+
+            .d-cal-panel-footer {
+                margin-top: 6px;
+                padding-top: 6px;
+                font-size: 0.74rem;
+            }
+
+            .d-toolbar {
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+
+            .d-palette {
+                padding: 8px 10px;
+            }
+
+            .d-controls-btn {
+                padding: 0 12px;
+                font-size: 0.74rem;
+            }
+
+            .d-palette .brush {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+        }
+
+        /* Tight desktop: ~1100–1199px */
+        @media (min-width: 1100px) and (max-width: 1199px) {
+            #desktop-root {
+                padding: 8px;
+            }
+
+            .d-layout {
+                gap: 8px;
+            }
+
+            .d-sidebar-drawer {
+                width: min(280px, calc(100vw - 16px));
+                top: 8px;
+                left: 8px;
+                bottom: 8px;
+                padding: 8px;
+            }
+
+            .d-cal-panel {
+                padding: 8px;
+            }
+
+            .d-dual-row {
+                gap: 7px;
+                margin-bottom: 8px;
+            }
+
+            .d-cal-panel-header,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                margin-bottom: 8px;
+            }
+
+            .d-cal-panel-title,
+            .d-pcs-panel h3,
+            .d-changes-panel h3,
+            #desktop-root h3 {
+                font-size: 0.92rem;
+            }
+
+            .d-cal-panel-badge {
+                font-size: 0.58rem;
+                padding: 2px 6px;
+            }
+
+            .d-calendar-grid {
+                width: 78%;
+                gap: 2px;
+            }
+
+            .d-calendar-grid .weekday {
+                font-size: 0.63rem;
+                padding-bottom: 1px;
+            }
+
+            .d-calendar-grid .day {
+                aspect-ratio: 1 / 0.72;
+            }
+
+            .d-calendar-grid .day-num {
+                font-size: 10px;
+                margin-bottom: 1px;
+            }
+
+            .d-calendar-grid .day-code {
+                font-size: 15px;
+            }
+
+            .d-calendar-grid .day.sday .day-num {
+                font-size: 15px;
+            }
+
+            .d-cal-panel-footer {
+                font-size: 0.74rem;
+                margin-top: 4px;
+                padding-top: 4px;
+            }
+
+            .d-month-nav-bar {
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .d-month-title {
+                min-width: 150px;
+                font-size: 1rem;
+            }
+
+            .d-nav-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 15px;
+            }
+
+            .d-toolbar {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .d-palette {
+                gap: 6px;
+                padding: 6px 8px;
+            }
+
+            .d-palette .brush {
+                width: 32px;
+                height: 32px;
+                font-size: 10px;
+            }
+
+            .d-controls-btn {
+                padding: 0 9px;
+                font-size: 0.7rem;
+            }
+
+            .d-analyze-btn {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Narrow desktop: ~769–1099px */
+        @media (min-width: 769px) and (max-width: 1099px) {
+            #desktop-root {
+                padding: 8px;
+            }
+
+            .d-layout {
+                gap: 8px;
+            }
+
+            .d-sidebar {
+                width: 180px;
+                gap: 8px;
+                top: 10px;
+            }
+
+            .d-sidebar-drawer {
+                width: min(280px, calc(100vw - 16px));
+                top: 8px;
+                left: 8px;
+                bottom: 8px;
+                padding: 8px;
+            }
+
+            .card {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+
+            .d-cal-panel {
+                padding: 7px;
+            }
+
+            .d-dual-row {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .d-calendar-grid {
+                width: 82%;
+                gap: 2px;
+            }
+
+            .d-calendar-grid .weekday {
+                font-size: 0.63rem;
+                padding-bottom: 1px;
+            }
+
+            .d-calendar-grid .day {
+                aspect-ratio: 1 / 0.72;
+            }
+
+            .d-calendar-grid .day-num {
+                font-size: 10px;
+                margin-bottom: 1px;
+            }
+
+            .d-calendar-grid .day-code {
+                font-size: 15px;
+            }
+
+            .d-calendar-grid .day.sday .day-num {
+                font-size: 15px;
+            }
+
+            .d-cal-panel-badge {
+                font-size: 0.58rem;
+                padding: 2px 6px;
+            }
+
+            .d-cal-panel-title {
+                font-size: 0.92rem;
+            }
+
+            .d-cal-panel-footer {
+                font-size: 0.74rem;
+                margin-top: 4px;
+                padding-top: 4px;
+            }
+
+            .d-palette .brush {
+                width: 30px;
+                height: 30px;
+                font-size: 10px;
+            }
+
+            .d-controls-btn {
+                padding: 0 8px;
+                font-size: 0.68rem;
+            }
+
+            .d-stat-row {
+                font-size: 0.74rem;
+                padding: 3px 0;
+            }
+
+            .d-num-input {
+                width: 64px;
+            }
+
+            .btn {
+                font-size: 0.72rem;
+                padding: 5px;
+                margin-top: 4px;
+            }
+
+            .d-month-nav-bar {
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .d-month-title {
+                min-width: 140px;
+                font-size: 0.95rem;
+            }
+
+            .d-nav-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 15px;
+            }
+
+            .d-toolbar {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .d-palette {
+                gap: 6px;
+                padding: 6px 8px;
+            }
+
+            .d-analyze-btn {
+                font-size: 0.78rem;
+            }
+        }
+
+        /* Below the comfortable minimum: lock layout width and let the page scroll.
+           This intentionally starts horizontal scrolling before the calendars get crushed. */
+        #desktop-root {
+            min-width: 1100px;
         }
 
         /* ═══════════════════════════════════════════════════════════
@@ -941,6 +1477,11 @@
             font-size: 14px;
             letter-spacing: -0.5px;
         }
+
+        .m-calendar-grid .day.sday .day-num {
+            font-size: 14px;
+        }
+
 
         /* Mobile changes section */
         .m-changes-card {
@@ -1703,9 +2244,13 @@
      DESKTOP LAYOUT
 ═══════════════════════════════════════════════════════════ -->
     <div id="desktop-root">
-        <div class="d-layout">
-
-            <!-- Sidebar -->
+        <div class="d-sidebar-backdrop" id="d-sidebar-backdrop" onclick="closeDesktopSidebar()"></div>
+        <div class="d-sidebar-drawer" id="d-sidebar-drawer" aria-hidden="true">
+            <div class="d-sidebar-head">
+                <h3>Settings</h3>
+                <button class="d-sidebar-close" type="button" aria-label="Close settings"
+                    onclick="closeDesktopSidebar()">&times;</button>
+            </div>
             <div class="d-sidebar">
                 <div class="card">
                     <div class="d-stat-row">
@@ -1726,27 +2271,18 @@
                 </div>
 
                 <div class="card">
-                    <button class="btn" onclick="copyCurrentToDesired()">⬇ Copy Current → Desired</button>
-                    <button class="btn" onclick="clearDesired()">🗑 Clear Desired</button>
-                    <button class="btn" onclick="exportData()">💾 Export</button>
+                    <button class="btn" onclick="copyCurrentToDesired(); closeDesktopSidebar();">⬇ Copy Current →
+                        Desired</button>
+                    <button class="btn" onclick="clearDesired(); closeDesktopSidebar();">🗑 Clear Desired</button>
+                    <button class="btn" onclick="exportData(); closeDesktopSidebar();">💾 Export</button>
                     <button class="btn" onclick="document.getElementById('d-importFile').click()">📂 Import</button>
                     <input type="file" id="d-importFile" style="display:none" onchange="importData(event)"
                         accept=".json,.html,.htm">
                 </div>
 
-                <div class="card">
-                    <h3>Legend</h3>
-                    <div
-                        style="font-size:0.82rem;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;color:var(--text-muted)">
-                        <div><b style="color:var(--text-main)">X</b> X-day</div>
-                        <div><b style="color:var(--text-main)">CI</b> Carry In</div>
-                        <div><b style="color:var(--text-main)">A</b> Absence</div>
-                        <div><b style="color:var(--text-main)">R</b> Reserve</div>
-                        <div><b style="color:var(--text-main)">CQ</b> Training</div>
-                        <div><b style="color:var(--text-main)">IVD</b> Indiv. Vacation</div>
-                    </div>
-                </div>
             </div>
+        </div>
+        <div class="d-layout">
 
             <!-- Main content -->
             <div class="d-main">
@@ -1760,6 +2296,10 @@
 
                 <!-- Toolbar: palette + analyze button -->
                 <div class="d-toolbar">
+                    <button class="d-controls-btn" id="d-controls-btn" type="button" aria-expanded="false"
+                        aria-controls="d-sidebar-drawer" onclick="toggleDesktopSidebar()">
+                        ☰ Settings
+                    </button>
                     <div class="d-palette">
                         <div class="brush R" data-brush="R" onclick="setBrush('R')">R</div>
                         <div class="brush X" data-brush="X" onclick="setBrush('X')">X</div>
@@ -1797,6 +2337,16 @@
                             <span class="x-blks" id="d-desired-x-blks">Blks: 0</span>
                         </div>
                     </div>
+                    <div class="d-cal-panel staffing-panel" id="d-staffing-panel">
+                        <div class="d-cal-panel-header">
+                            <span class="d-cal-panel-badge badge-staffing">RESERVE LEVELS</span>
+                            <span class="d-cal-panel-title" id="d-staffing-panel-title">Loading…</span>
+                        </div>
+                        <div id="d-staffing-grid"></div>
+                        <div class="d-cal-panel-footer" aria-hidden="true" style="visibility:hidden">
+                            <span class="x-count">&nbsp;</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- PCS Analysis panel -->
@@ -1828,6 +2378,7 @@
         <div id="m-tab-bar">
             <div class="m-tab active-tab" data-tab="current" onclick="switchMobileTab('current')">Current</div>
             <div class="m-tab" data-tab="desired" onclick="switchMobileTab('desired')">Desired</div>
+            <div class="m-tab" data-tab="staffing" onclick="switchMobileTab('staffing')">Reserve Levels</div>
             <div class="m-tab" data-tab="changes" onclick="switchMobileTab('changes')">Analysis</div>
         </div>
 
@@ -1863,18 +2414,6 @@
                     <input type="file" id="m-importFile" style="display:none" onchange="importData(event)"
                         accept=".json,.html,.htm">
                 </div>
-                <div class="m-sheet-section">
-                    <h3>Legend</h3>
-                    <div
-                        style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.82rem;color:var(--text-muted)">
-                        <div><b style="color:var(--text-main)">X</b> X-day</div>
-                        <div><b style="color:var(--text-main)">CI</b> Carry In</div>
-                        <div><b style="color:var(--text-main)">A</b> Absence</div>
-                        <div><b style="color:var(--text-main)">R</b> Reserve</div>
-                        <div><b style="color:var(--text-main)">CQ</b> Training</div>
-                        <div><b style="color:var(--text-main)">IVD</b> Indiv. Vacation</div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1885,19 +2424,52 @@
            DEVICE DETECTION
         ═══════════════════════════════════════════════════════════════ */
         function isMobileDevice() {
-            const touch = navigator.maxTouchPoints > 1;
             const narrow = window.innerWidth <= 768;
             const ua = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-            return (touch && narrow) || ua;
+            return narrow || ua;
         }
 
         let usingMobile = isMobileDevice();
         let activeMobileTab = 'current'; // 'current' | 'desired' | 'changes'
+        let desktopSidebarOpen = false;
+
+        function setDesktopSidebarOpen(open) {
+            desktopSidebarOpen = !!open && !usingMobile;
+            document.body.classList.toggle('desktop-sidebar-open', desktopSidebarOpen);
+
+            const drawer = document.getElementById('d-sidebar-drawer');
+            const btn = document.getElementById('d-controls-btn');
+            if (drawer) drawer.setAttribute('aria-hidden', desktopSidebarOpen ? 'false' : 'true');
+            if (btn) btn.setAttribute('aria-expanded', desktopSidebarOpen ? 'true' : 'false');
+        }
+
+        function toggleDesktopSidebar() {
+            setDesktopSidebarOpen(!desktopSidebarOpen);
+        }
+
+        function closeDesktopSidebar() {
+            setDesktopSidebarOpen(false);
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && desktopSidebarOpen) {
+                closeDesktopSidebar();
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!desktopSidebarOpen) return;
+            const drawer = document.getElementById('d-sidebar-drawer');
+            const btn = document.getElementById('d-controls-btn');
+            if (drawer?.contains(e.target) || btn?.contains(e.target)) return;
+            closeDesktopSidebar();
+        });
 
         function applyLayout() {
             const mRoot = document.getElementById('mobile-root');
             const dRoot = document.getElementById('desktop-root');
             if (usingMobile) {
+                closeDesktopSidebar();
                 mRoot.classList.add('active');
                 dRoot.classList.remove('active');
                 document.body.style.overflow = 'hidden';
@@ -1909,6 +2481,7 @@
                 document.body.style.overflow = '';
                 document.body.style.height = '';
                 document.documentElement.style.height = '';
+                setDesktopSidebarOpen(false);
             }
         }
 
@@ -2028,8 +2601,12 @@
                     monthData[i].current = Array(m.dayCount).fill('X');
                 if (!monthData[i].desired || monthData[i].desired.length !== m.dayCount)
                     monthData[i].desired = [...monthData[i].current];
+                if (!monthData[i].staffing || monthData[i].staffing.length !== m.dayCount)
+                    monthData[i].staffing = Array(m.dayCount).fill(true); // true = OK (blue), false = blocked (black)
             });
 
+            // Re-evaluate here so Chrome/Edge DevTools viewport metrics are applied
+            usingMobile = isMobileDevice();
             applyLayout();
             changeFocusMonth(currentIdx);
             setBrush(activeBrush);
@@ -2493,12 +3070,33 @@
             markPCSStale();
         }
 
+        function buildStaffingGridHTML(idx, gridClass) {
+            const m = BID_MONTHS[idx];
+            const arr = monthData[idx].staffing;
+            let html = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<div class="weekday">${d}</div>`).join('');
+            for (let i = 0; i < m.start.getDay(); i++) html += '<div></div>';
+            arr.forEach((ok, dIdx) => {
+                const date = new Date(m.start); date.setDate(m.start.getDate() + dIdx);
+                // Use .day for identical sizing to current/desired cells.
+                // The empty .day-code span acts as the same height-driver as the code label in regular cells.
+                // .sday is kept for event handler targeting.
+                html += `<div class="day sday ${ok ? 'ok' : 'blocked'}" data-didx="${dIdx}" data-target="staffing">
+            <span class="day-num">${date.getDate()}</span>
+            <span class="day-code" aria-hidden="true"></span>
+        </div>`;
+            });
+            return `<div class="${gridClass}" data-target="staffing">${html}</div>`;
+        }
+
         function renderDesktopCurrent() {
             // Current month dual
             document.getElementById('d-current-grid').innerHTML =
                 buildCalendarGridHTML(currentIdx, 'current', 'd-calendar-grid');
             document.getElementById('d-desired-grid').innerHTML =
                 buildCalendarGridHTML(currentIdx, 'desired', 'd-calendar-grid');
+            document.getElementById('d-staffing-grid').innerHTML =
+                buildStaffingGridHTML(currentIdx, 'd-calendar-grid');
+            document.getElementById('d-staffing-panel-title').textContent = BID_MONTHS[currentIdx].name;
         }
 
 
@@ -2572,6 +3170,15 @@
                 </div>
             </div>
         </div>
+        <div id="m-tab-staffing" class="m-cal-tabs-content ${activeMobileTab === 'staffing' ? 'active' : ''}">
+            <div class="m-cal-card">
+                <div class="m-cal-header">
+                    <span class="m-cal-badge badge-staffing">RESERVE LEVELS</span>
+                    <span class="m-cal-title">${m.name}</span>
+                </div>
+                ${buildStaffingGridHTML(idx, 'm-calendar-grid')}
+            </div>
+        </div>
         <div id="m-tab-changes" class="m-cal-tabs-content ${activeMobileTab === 'changes' ? 'active' : ''}">
             <div class="m-changes-card">
                 ${pcsHTML}
@@ -2586,6 +3193,29 @@
             container.querySelectorAll('.brush').forEach(el => {
                 el.addEventListener('click', () => setBrush(el.dataset.brush));
             });
+
+            // Touch toggle on staffing grid
+            const staffingGrid = container.querySelector('.m-calendar-grid[data-target="staffing"]');
+            if (staffingGrid) {
+                let tapStartX, tapStartY;
+                const staffingCard = staffingGrid.closest('.m-cal-card');
+                staffingCard.addEventListener('touchstart', e => {
+                    tapStartX = e.changedTouches[0].clientX;
+                    tapStartY = e.changedTouches[0].clientY;
+                }, { passive: true });
+                staffingCard.addEventListener('touchend', e => {
+                    const t = e.changedTouches[0];
+                    if (Math.abs(t.clientX - tapStartX) > 10 || Math.abs(t.clientY - tapStartY) > 10) return;
+                    const sdayEl = document.elementFromPoint(t.clientX, t.clientY)?.closest('.sday[data-didx]');
+                    if (sdayEl) {
+                        const dIdx = parseInt(sdayEl.dataset.didx);
+                        monthData[currentIdx].staffing[dIdx] = !monthData[currentIdx].staffing[dIdx];
+                        save();
+                        renderMobilePanels();
+                        markPCSStale();
+                    }
+                });
+            }
 
             // Touch painting on both grids
             ['current', 'desired'].forEach(target => {
@@ -2621,7 +3251,7 @@
                 el.classList.toggle('active-tab', el.dataset.tab === tab);
             });
             // Show/hide content
-            ['current', 'desired', 'changes'].forEach(t => {
+            ['current', 'desired', 'staffing', 'changes'].forEach(t => {
                 const el = document.getElementById(`m-tab-${t}`);
                 if (el) el.classList.toggle('active', t === tab);
             });
@@ -2631,7 +3261,46 @@
         /* ═══════════════════════════════════════════════════════════════
            DESKTOP MOUSE PAINTING — only on desired panel
         ═══════════════════════════════════════════════════════════════ */
+        function toggleStaffingDay(dIdx) {
+            monthData[currentIdx].staffing[dIdx] = !monthData[currentIdx].staffing[dIdx];
+            save();
+            renderDesktopCurrent();
+            markPCSStale();
+        }
+
         function initDesktopMousePainting() {
+            // Staffing calendar: click or drag to toggle blocked/ok
+            let staffingPaintValue = null;
+            document.addEventListener('mousedown', e => {
+                const sdayEl = e.target.closest && e.target.closest('#d-staffing-grid .sday[data-didx]');
+                if (sdayEl && (e.button === 0 || e.button === 2)) {
+                    const dIdx = parseInt(sdayEl.dataset.didx);
+                    staffingPaintValue = !monthData[currentIdx].staffing[dIdx]; // paint with toggled value
+                    monthData[currentIdx].staffing[dIdx] = staffingPaintValue;
+                    save();
+                    renderDesktopCurrent();
+                    markPCSStale();
+                    e.preventDefault();
+                    return;
+                }
+            });
+            document.addEventListener('mousemove', e => {
+                if (staffingPaintValue === null) return;
+                const sdayEl = e.target.closest && e.target.closest('#d-staffing-grid .sday[data-didx]');
+                if (sdayEl) {
+                    const dIdx = parseInt(sdayEl.dataset.didx);
+                    if (monthData[currentIdx].staffing[dIdx] !== staffingPaintValue) {
+                        monthData[currentIdx].staffing[dIdx] = staffingPaintValue;
+                        save();
+                        renderDesktopCurrent();
+                        markPCSStale();
+                    }
+                }
+            });
+            document.addEventListener('mouseup', e => {
+                if (e.button === 0 || e.button === 2) staffingPaintValue = null;
+            });
+
             document.addEventListener('mousedown', e => {
                 const dayEl = e.target.closest && e.target.closest('#d-current-grid .day[data-didx], #d-desired-grid .day[data-didx]');
                 if (!dayEl) return;
@@ -2677,7 +3346,7 @@
                 if (e.button === 0) { isPainting = false; endStroke(); }
             });
             document.addEventListener('contextmenu', e => {
-                if (e.target.closest && e.target.closest('#d-current-grid .day[data-didx], #d-desired-grid .day[data-didx]'))
+                if (e.target.closest && e.target.closest('#d-current-grid .day[data-didx], #d-desired-grid .day[data-didx], #d-staffing-grid .sday[data-didx]'))
                     e.preventDefault();
             });
         }
@@ -2974,11 +3643,18 @@
                     throw new Error(`Month ${idx} current data is missing or invalid`);
                 }
 
+                const importedStaffing = Array.isArray(importedMonth.staffing) && importedMonth.staffing.length === expectedDays
+                    ? importedMonth.staffing
+                    : null;
+
                 monthData[idx] = {
                     current: [...importedCurrent],
                     desired: (importedDesired && importedDesired.length === expectedDays)
                         ? [...importedDesired]
                         : [...monthData[idx].desired],
+                    staffing: importedStaffing
+                        ? [...importedStaffing]
+                        : Array(expectedDays).fill(true),
                 };
             };
 
@@ -3255,6 +3931,17 @@
                     if (ciIndices[k] !== ciIndices[k - 1] + 1) {
                         return { blocked: true, blockedReason: 'Check CI day placement in current month', violations: [] };
                     }
+                }
+            }
+
+            // P12: R→X transitions are forbidden on staffing-blocked dates
+            const staffing = monthData[mIdx].staffing || [];
+            for (let i = 0; i <= lastIdx; i++) {
+                if (curr[i] === 'R' && des[i] === 'X' && staffing[i] === false) {
+                    violations.push({
+                        rule: 'P12',
+                        message: `${calDate(mIdx, i)}: Res Avail < Res Req... Moving this X day won't work.`,
+                    });
                 }
             }
 

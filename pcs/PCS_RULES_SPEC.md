@@ -154,3 +154,11 @@ Pathfinding rules:
   - valid two-run example: to move days from the middle of block [S..E]:
     - Run 1: move suffix [A+1..E] to desired positions (valid: touches last day E of block)
     - Run 2: move [A] — now the last day of the shortened block [S..A] — to its final position (valid: touches last day A)
+- Rule P12: Certain dates may be marked as staffing-blocked, meaning the company has determined that minimum on-call headcount would be violated if any additional employee took that day off.
+  - A staffing-blocked date forbids R→X transitions on that date only. It does not affect X→R or X→X.
+  - fails when: desired has X on a staffing-blocked date that was R in current (new day-off placed on a blocked date)
+  - passes when: current already has X on a staffing-blocked date and desired keeps it X (no move, no violation)
+  - passes when: current has X on a staffing-blocked date and desired moves it away to an unblocked date (removing a day off from a blocked date is always allowed)
+  - Blocked date set is external to the employee's schedule — it comes from company-wide headcount data and must be supplied as input to the analyzer.
+  - If all valid destinations for a required X-day move are staffing-blocked, the analyzer must report the move as impossible.
+  - Staffing-blocked dates apply equally to intermediate states in two-run plans (P11): neither Run 1 nor Run 2 may place a new X on a blocked date.
