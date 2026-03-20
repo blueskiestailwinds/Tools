@@ -1500,6 +1500,10 @@
             margin-top: 10px;
         }
 
+        .m-run-analysis-btn {
+            font-size: 1.3em;
+        }
+
         .m-changes-title {
             font-size: 0.75rem;
             font-weight: 700;
@@ -2576,7 +2580,7 @@
             const mTab = document.getElementById('m-tab-changes');
             if (mTab) {
                 const card = mTab.querySelector('.m-changes-card');
-                if (card) card.innerHTML = `<button class="btn" onclick="runPCSAnalysis()" style="margin-top:0;background:#1a2744;color:#93c5fd;border-color:#2563eb">🔍 Run PCS Analysis</button>`;
+                if (card) card.innerHTML = `<button class="btn m-run-analysis-btn" onclick="runPCSAnalysis()" style="margin-top:0;background:#1a2744;color:#93c5fd;border-color:#2563eb">🔍 Run PCS Analysis</button>`;
             }
             const btn = document.getElementById('d-analyze-btn');
             if (btn) btn.classList.add('stale');
@@ -3138,7 +3142,7 @@
         </div>`;
 
             const pcsHTML = pcsIsStale
-                ? `<button class="btn" onclick="runPCSAnalysis()" style="margin-top:0;background:#1a2744;color:#93c5fd;border-color:#2563eb">🔍 Run PCS Analysis</button>`
+                ? `<button class="btn m-run-analysis-btn" onclick="runPCSAnalysis()" style="margin-top:0;background:#1a2744;color:#93c5fd;border-color:#2563eb">🔍 Run PCS Analysis</button>`
                 : buildMobilePCSHTML(idx);
 
             const currArr = monthData[idx].current || [];
