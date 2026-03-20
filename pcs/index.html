@@ -2545,10 +2545,10 @@
                 else if (mIdx === 10) { start = new Date(y, 10, 1); end = new Date(y, 10, 30); name = "November"; }
                 else { start = new Date(y, 11, 1); end = new Date(y, 11, 31); name = "December"; }
                 const dayCount = Math.round((end - start) / 86400000) + 1;
-                // D+2 rule: earliest movable day is two days from today.
+                // D+4 rule: deadline to move a day is 2200 ET four days before that day.
                 // todayOffset = how many days today is from m.start (can be negative if month is future).
                 const todayOffset = Math.round((today - start) / 86400000);
-                const firstMovableIdx = Math.min(dayCount, Math.max(0, todayOffset + 2));
+                const firstMovableIdx = Math.min(dayCount, Math.max(0, todayOffset + 4));
                 months.push({ name: `${name} ${y}`, start, end, dayCount, firstMovableIdx, id: `scp-${y}-${mIdx}` });
             }
             return months;
@@ -4117,7 +4117,7 @@
                 if (curr[i] !== des[i]) {
                     return {
                         blocked: true,
-                        blockedReason: `${calDate(mIdx, i)} cannot be changed. Only X days 2+ days in the future can be moved.`,
+                        blockedReason: `${calDate(mIdx, i)} cannot be changed. The deadline to move a day is 2200 ET four days prior.`,
                         violations: [],
                     };
                 }
@@ -4644,7 +4644,6 @@
         </div>
         <div class="pcs-steps-header">Two-Run PCS Options</div>
         <div class="pcs-steps">${cards}</div>
-        ${changesHTML}
         ${ivdPlacementsHTML}`;
             }
 
@@ -4669,8 +4668,7 @@
             <span>Desired schedule is reachable in 2 PCS runs.</span>
         </div>
         <div class="pcs-steps-header">Two-Run PCS Options</div>
-        <div class="pcs-steps">${cards}</div>
-        ${changesHTML}`;
+        <div class="pcs-steps">${cards}</div>`;
             }
 
             const violationsHTML = `<div class="pcs-violations">
