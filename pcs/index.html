@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PCS Planner</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+
 
     <style>
         /* ═══════════════════════════════════════════════════════════
@@ -2556,6 +2558,50 @@
         const STORE_KEY = "scp_v1";
         const DISCLAIMER_ACK_KEY_DESKTOP = 'scp_disclaimer_ack_desktop_v1';
         const DISCLAIMER_ACK_KEY_MOBILE = 'scp_disclaimer_ack_mobile_v1';
+        const ALLOWED_DAY_CODES = new Set(['X', 'R', 'A', 'CQ', 'CI', 'IVD']);
+
+        function escapeHTML(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function normalizeDayArray(arr, expectedDays, fallbackCode = 'X') {
+            if (!Array.isArray(arr) || arr.length !== expectedDays) {
+                return Array(expectedDays).fill(fallbackCode);
+            }
+            return arr.map(code => (typeof code === 'string' && ALLOWED_DAY_CODES.has(code)) ? code : fallbackCode);
+        }
+
+        function normalizeStaffingArray(arr, expectedDays) {
+            if (!Array.isArray(arr) || arr.length !== expectedDays) {
+                return Array(expectedDays).fill(true);
+            }
+            return arr.map(v => typeof v === 'boolean' ? v : true);
+        }
+
+        function readStoredJSON(key, fallbackValue) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallbackValue;
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    return parsed;
+                }
+            } catch (err) {
+                console.warn(`Storage parse failed for ${key}; resetting to defaults.`, err);
+            }
+
+            try {
+                localStorage.removeItem(key);
+            } catch (err) {
+                console.warn(`Failed to remove corrupted storage key ${key}.`, err);
+            }
+            return fallbackValue;
+        }
 
         let currentIdx = 0;
         let activeBrush = 'X';
@@ -2571,6 +2617,8 @@
         let pcsRenderTimer = null;
         let pcsIsStale = true;
         let lockedTooltipTimer = null;
+        let saveTimer = null;
+        let hasPendingSave = false;
 
         function markPCSStale() {
             pcsIsStale = true;
@@ -2587,15 +2635,27 @@
         }
 
         function runPCSAnalysis() {
-            pcsIsStale = false;
-            renderPCSPanel();
-            const mTab = document.getElementById('m-tab-changes');
-            if (mTab) {
-                const card = mTab.querySelector('.m-changes-card');
-                if (card) card.innerHTML = buildMobilePCSHTML(currentIdx);
+            try {
+                pcsIsStale = false;
+                renderPCSPanel();
+                const mTab = document.getElementById('m-tab-changes');
+                if (mTab) {
+                    const card = mTab.querySelector('.m-changes-card');
+                    if (card) card.innerHTML = buildMobilePCSHTML(currentIdx);
+                }
+                const btn = document.getElementById('d-analyze-btn');
+                if (btn) btn.classList.remove('stale');
+            } catch (err) {
+                console.error('PCS analysis failed', err);
+                pcsIsStale = true;
+                const el = document.getElementById('d-pcs-content');
+                if (el) {
+                    el.innerHTML = `<div class="pcs-status-bar warning">
+            <span class="pcs-status-icon">⚠</span>
+            <span>PCS analysis hit an unexpected error. Try reloading the page.</span>
+        </div>`;
+                }
             }
-            const btn = document.getElementById('d-analyze-btn');
-            if (btn) btn.classList.remove('stale');
         }
 
 
@@ -2604,8 +2664,7 @@
         ═══════════════════════════════════════════════════════════════ */
         function init() {
             loadSettings();
-            const saved = localStorage.getItem(STORE_KEY);
-            const global = saved ? JSON.parse(saved) : {};
+            const global = readStoredJSON(STORE_KEY, {});
 
             BID_MONTHS.forEach((m, i) => {
                 const saved = global[m.id];
@@ -2613,12 +2672,16 @@
                     current: Array(m.dayCount).fill('X'),
                     desired: Array(m.dayCount).fill('X'),
                 };
-                if (!monthData[i].current || monthData[i].current.length !== m.dayCount)
-                    monthData[i].current = Array(m.dayCount).fill('X');
-                if (!monthData[i].desired || monthData[i].desired.length !== m.dayCount)
-                    monthData[i].desired = [...monthData[i].current];
-                if (!monthData[i].staffing || monthData[i].staffing.length !== m.dayCount)
-                    monthData[i].staffing = Array(m.dayCount).fill(true); // true = OK (blue), false = blocked (black)
+
+                monthData[i].current = normalizeDayArray(monthData[i].current, m.dayCount, 'X');
+
+                const desiredBase = (Array.isArray(monthData[i].desired) && monthData[i].desired.length === m.dayCount)
+                    ? monthData[i].desired
+                    : [...monthData[i].current];
+                monthData[i].desired = normalizeDayArray(desiredBase, m.dayCount, 'X');
+
+                // true = OK (blue), false = blocked (black)
+                monthData[i].staffing = normalizeStaffingArray(monthData[i].staffing, m.dayCount);
             });
 
             // Re-evaluate here so Chrome/Edge DevTools viewport metrics are applied
@@ -2855,11 +2918,44 @@
         /* ═══════════════════════════════════════════════════════════════
            SAVE
         ═══════════════════════════════════════════════════════════════ */
-        function save() {
+        function writeSaveSnapshot() {
             const out = {};
             BID_MONTHS.forEach((m, i) => { out[m.id] = monthData[i]; });
             localStorage.setItem(STORE_KEY, JSON.stringify(out));
         }
+
+        function flushPendingSave() {
+            if (!hasPendingSave) return;
+            if (saveTimer) {
+                clearTimeout(saveTimer);
+                saveTimer = null;
+            }
+            writeSaveSnapshot();
+            hasPendingSave = false;
+        }
+
+        function save(options = {}) {
+            const immediate = !!options.immediate;
+            hasPendingSave = true;
+
+            if (immediate) {
+                flushPendingSave();
+                return;
+            }
+
+            if (saveTimer) return;
+            saveTimer = setTimeout(() => {
+                saveTimer = null;
+                flushPendingSave();
+            }, 150);
+        }
+
+        window.addEventListener('beforeunload', flushPendingSave);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                flushPendingSave();
+            }
+        });
 
         /* ═══════════════════════════════════════════════════════════════
            NAVIGATION
@@ -3070,7 +3166,7 @@
                 const title = isLocked ? ' title="Locked by current schedule"' : '';
                 html += `<div class="day ${code}${changed}${locked}" data-didx="${dIdx}" data-target="${target}"${title}>
             <span class="day-num">${date.getDate()}</span>
-            <span class="day-code">${code}</span>
+            <span class="day-code">${escapeHTML(code)}</span>
         </div>`;
             });
             return `<div class="${gridClass}" data-target="${target}">${html}</div>`;
@@ -3385,8 +3481,76 @@
         /* ═══════════════════════════════════════════════════════════════
            EXPORT / IMPORT
         ═══════════════════════════════════════════════════════════════ */
+        const EXPORT_SCHEMA = 'pcs-export';
+        const EXPORT_VERSION = 1;
+
+        function canonicalJSONStringify(value) {
+            if (value === null || typeof value !== 'object') {
+                return JSON.stringify(value);
+            }
+            if (Array.isArray(value)) {
+                return '[' + value.map(v => canonicalJSONStringify(v)).join(',') + ']';
+            }
+
+            const keys = Object.keys(value).sort();
+            const pairs = keys.map(k => JSON.stringify(k) + ':' + canonicalJSONStringify(value[k]));
+            return '{' + pairs.join(',') + '}';
+        }
+
+        function computeExportChecksum(payload) {
+            const str = canonicalJSONStringify(payload);
+            let hash = 0x811c9dc5;
+            for (let i = 0; i < str.length; i++) {
+                hash ^= str.charCodeAt(i);
+                hash = Math.imul(hash, 0x01000193);
+            }
+            return (hash >>> 0).toString(16).padStart(8, '0');
+        }
+
+        function unwrapImportedJSON(raw) {
+            if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+                throw new Error('Import file is not a valid JSON object.');
+            }
+
+            // Backward compatibility: legacy JSON files directly contain month data.
+            if (raw.schema !== EXPORT_SCHEMA) return raw;
+
+            if (raw.version !== EXPORT_VERSION) {
+                throw new Error(`Unsupported export version: ${raw.version}`);
+            }
+            if (!raw.data || typeof raw.data !== 'object' || Array.isArray(raw.data)) {
+                throw new Error('Export payload is missing data.');
+            }
+            if (typeof raw.checksum !== 'string' || !raw.checksum) {
+                throw new Error('Export payload is missing checksum.');
+            }
+
+            const expected = computeExportChecksum({
+                schema: raw.schema,
+                version: raw.version,
+                data: raw.data,
+            });
+            if (expected !== raw.checksum) {
+                throw new Error('Import checksum failed. The file may be corrupted or modified.');
+            }
+
+            return raw.data;
+        }
+
         async function exportData() {
-            const json = JSON.stringify(monthData, null, 2);
+            const envelope = {
+                schema: EXPORT_SCHEMA,
+                version: EXPORT_VERSION,
+                exportedAt: new Date().toISOString(),
+                data: monthData,
+            };
+            envelope.checksum = computeExportChecksum({
+                schema: envelope.schema,
+                version: envelope.version,
+                data: envelope.data,
+            });
+
+            const json = JSON.stringify(envelope, null, 2);
             if (window.showSaveFilePicker) {
                 try {
                     const fh = await window.showSaveFilePicker({
@@ -3638,6 +3802,29 @@
         }
 
         function applyImportedData(imp) {
+            const validateImportedDayArray = (arr, expectedDays, monthIdx, fieldName) => {
+                if (!Array.isArray(arr) || arr.length !== expectedDays) {
+                    throw new Error(`Month ${monthIdx} ${fieldName} data is missing or invalid`);
+                }
+
+                for (let i = 0; i < arr.length; i++) {
+                    const code = arr[i];
+                    if (typeof code !== 'string' || !ALLOWED_DAY_CODES.has(code)) {
+                        throw new Error(`Month ${monthIdx} ${fieldName}[${i}] has invalid code: ${String(code)}`);
+                    }
+                }
+            };
+
+            const validateImportedStaffingArray = (arr, expectedDays, monthIdx) => {
+                if (!Array.isArray(arr) || arr.length !== expectedDays) return false;
+                for (let i = 0; i < arr.length; i++) {
+                    if (typeof arr[i] !== 'boolean') {
+                        throw new Error(`Month ${monthIdx} staffing[${i}] must be true or false`);
+                    }
+                }
+                return true;
+            };
+
             const hasMonthZero = !!(imp && Object.prototype.hasOwnProperty.call(imp, '0'));
             const hasMonthOne = !!(imp && Object.prototype.hasOwnProperty.call(imp, '1'));
 
@@ -3655,21 +3842,21 @@
                 const importedCurrent = Array.isArray(importedMonth.current) ? importedMonth.current : null;
                 const importedDesired = Array.isArray(importedMonth.desired) ? importedMonth.desired : null;
 
-                if (!importedCurrent || importedCurrent.length !== expectedDays) {
-                    throw new Error(`Month ${idx} current data is missing or invalid`);
+                validateImportedDayArray(importedCurrent, expectedDays, idx, 'current');
+
+                if (importedDesired) {
+                    validateImportedDayArray(importedDesired, expectedDays, idx, 'desired');
                 }
 
-                const importedStaffing = Array.isArray(importedMonth.staffing) && importedMonth.staffing.length === expectedDays
-                    ? importedMonth.staffing
-                    : null;
+                const hasValidImportedStaffing = validateImportedStaffingArray(importedMonth.staffing, expectedDays, idx);
 
                 monthData[idx] = {
                     current: [...importedCurrent],
                     desired: (importedDesired && importedDesired.length === expectedDays)
                         ? [...importedDesired]
                         : [...monthData[idx].desired],
-                    staffing: importedStaffing
-                        ? [...importedStaffing]
+                    staffing: hasValidImportedStaffing
+                        ? [...importedMonth.staffing]
                         : Array(expectedDays).fill(true),
                 };
             };
@@ -3683,18 +3870,29 @@
             event.target.value = '';
             if (!file) return;
 
+            const JSON_IMPORT_MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+            const HTML_IMPORT_MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+
             try {
                 const fileName = (file.name || '').toLowerCase();
 
                 if (fileName.endsWith('.json')) {
+                    if (file.size > JSON_IMPORT_MAX_BYTES) {
+                        throw new Error('JSON import is too large. Maximum allowed size is 20 MB.');
+                    }
+
                     const text = await file.text();
-                    const imp = JSON.parse(text);
+                    const imp = unwrapImportedJSON(JSON.parse(text));
                     applyImportedData(imp);
                     save(); renderAll();
                     return;
                 }
 
                 if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+                    if (file.size > HTML_IMPORT_MAX_BYTES) {
+                        throw new Error('HTML import is too large. Maximum allowed size is 20 MB.');
+                    }
+
                     const employeeId = await askForEmployeeId(file.name || 'selected file');
                     if (employeeId === null) return;
 
@@ -3777,9 +3975,8 @@
         const SETTINGS_KEY = 'scp_settings_v1';
 
         function loadSettings() {
-            const saved = localStorage.getItem(SETTINGS_KEY);
-            if (!saved) return;
-            const s = JSON.parse(saved);
+            const s = readStoredJSON(SETTINGS_KEY, null);
+            if (!s) return;
             if (s.maxXblocks != null) document.getElementById('s-max-xblocks').value = s.maxXblocks;
             if (s.minWork != null) document.getElementById('s-min-work').value = s.minWork;
             if (s.maxWork != null) document.getElementById('s-max-work').value = s.maxWork;
@@ -4340,7 +4537,15 @@
         function renderPCSPanel() {
             const el = document.getElementById('d-pcs-content');
             if (!el) return;
-            el.innerHTML = buildPCSHTML(currentIdx);
+            try {
+                el.innerHTML = buildPCSHTML(currentIdx);
+            } catch (err) {
+                console.error('Failed to render PCS panel', err);
+                el.innerHTML = `<div class="pcs-status-bar warning">
+            <span class="pcs-status-icon">⚠</span>
+            <span>Unable to render PCS analysis right now. Try reloading the page.</span>
+        </div>`;
+            }
         }
 
         function buildPCSHTML(mIdx) {
@@ -4352,7 +4557,7 @@
             if (result.blocked) {
                 return `<div class="pcs-status-bar warning">
             <span class="pcs-status-icon">⚠</span>
-            <span>${result.blockedReason}</span>
+            <span>${escapeHTML(result.blockedReason)}</span>
         </div>`;
             }
 
@@ -4469,7 +4674,7 @@
             }
 
             const violationsHTML = `<div class="pcs-violations">
-        ${result.violations.map(v => `<div class="pcs-violation">${v.message}</div>`).join('')}
+        ${result.violations.map(v => `<div class="pcs-violation">${escapeHTML(v.message)}</div>`).join('')}
     </div>`;
 
             return `<div class="pcs-status-bar illegal">
@@ -4484,7 +4689,24 @@
         /* ═══════════════════════════════════════════════════════════════
            GO
         ═══════════════════════════════════════════════════════════════ */
-        init();
+        try {
+            init();
+        } catch (err) {
+            console.error('Application startup failed', err);
+            const dContent = document.getElementById('d-pcs-content');
+            if (dContent) {
+                dContent.innerHTML = `<div class="pcs-status-bar warning">
+            <span class="pcs-status-icon">⚠</span>
+            <span>App startup failed. Refresh the page to recover.</span>
+        </div>`;
+            }
+            const mPanel = document.getElementById('m-panel-curr');
+            if (mPanel) {
+                mPanel.innerHTML = `<div class="m-changes-card">
+            <div class="changes-empty">App startup failed. Refresh the page to recover.</div>
+        </div>`;
+            }
+        }
     </script>
 </body>
 
