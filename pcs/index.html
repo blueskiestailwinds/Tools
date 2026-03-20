@@ -2527,6 +2527,10 @@
             const months = [];
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // midnight local
+            // 2200 ET cutoff: once past 2200 ET, the D+4 day locks and the window shifts to D+5.
+            const etHour = parseInt(now.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'America/New_York' }), 10);
+            const cutoffPassed = etHour >= 22;
+            const movableDayOffset = cutoffPassed ? 5 : 4;
             const ref = new Date(now.getFullYear(), now.getMonth(), 1);
             for (let i = 0; i < 2; i++) {
                 const date = new Date(ref.getFullYear(), ref.getMonth() + i, 1);
@@ -2548,7 +2552,7 @@
                 // D+4 rule: deadline to move a day is 2200 ET four days before that day.
                 // todayOffset = how many days today is from m.start (can be negative if month is future).
                 const todayOffset = Math.round((today - start) / 86400000);
-                const firstMovableIdx = Math.min(dayCount, Math.max(0, todayOffset + 4));
+                const firstMovableIdx = Math.min(dayCount, Math.max(0, todayOffset + movableDayOffset));
                 months.push({ name: `${name} ${y}`, start, end, dayCount, firstMovableIdx, id: `scp-${y}-${mIdx}` });
             }
             return months;
