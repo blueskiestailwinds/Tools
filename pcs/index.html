@@ -2591,6 +2591,38 @@ function analyzePCSPair(mIdx, curr, des) {
         }
     }
 
+    // P10: X days moved from a block must be a contiguous range touching the first or last day
+    // (implements contract section 8.a)
+    const currXBlocks = getXBlocks(curr);
+    for (const block of currXBlocks) {
+        const removedFromBlock = [];
+        for (let i = block.start; i <= block.end; i++) {
+            if (des[i] === 'R') removedFromBlock.push(i);
+        }
+        if (removedFromBlock.length === 0) continue;
+
+        let contiguous = true;
+        for (let k = 1; k < removedFromBlock.length; k++) {
+            if (removedFromBlock[k] !== removedFromBlock[k - 1] + 1) { contiguous = false; break; }
+        }
+        if (!contiguous) {
+            violations.push({
+                rule: 'P10',
+                message: `${calDateRange(mIdx, block.start, block.end)}: X-day moves from a block must be contiguous`,
+            });
+            continue;
+        }
+
+        const removedFirst = removedFromBlock[0];
+        const removedLast  = removedFromBlock[removedFromBlock.length - 1];
+        if (removedFirst !== block.start && removedLast !== block.end) {
+            violations.push({
+                rule: 'P10',
+                message: `${calDateRange(mIdx, block.start, block.end)}: Can only move the first day(s), last day(s), or the entire X-day block — not days from the middle`,
+            });
+        }
+    }
+
     // Precompute opening conditions
     let ciEndIdx = -1;
     if (curr[0] === 'CI') {
@@ -2761,6 +2793,104 @@ function findTwoStepPCSPlans(mIdx) {
     return plans;
 }
 
+// Format X-day moves between two schedules as a human-readable string.
+function formatXMovePairs(mIdx, from, to) {
+    const removedIdx = [], addedIdx = [];
+    from.forEach((code, i) => {
+        if (code === 'X' && to[i] === 'R') removedIdx.push(i);
+        if (code === 'R' && to[i] === 'X') addedIdx.push(i);
+    });
+    if (removedIdx.length === 0) return 'No X-day moves';
+
+    const groups = [];
+    removedIdx.forEach((r, k) => {
+        const t = addedIdx[k];
+        const last = groups[groups.length - 1];
+        if (last && r === last.fromEnd + 1 && t === last.toEnd + 1) {
+            last.fromEnd = r; last.toEnd = t;
+        } else {
+            groups.push({ fromStart: r, fromEnd: r, toStart: t, toEnd: t });
+        }
+    });
+    return groups.map(g =>
+        `${calDateRange(mIdx, g.fromStart, g.fromEnd)} → ${calDateRange(mIdx, g.toStart, g.toEnd)}`
+    ).join(', ');
+}
+
+// Search for a valid two-step plan when the direct X-day move violates P10.
+// Enumerates intermediate states within the union of current and desired X positions.
+function findTwoStepXMovePlans(mIdx) {
+    const curr = monthData[mIdx].current;
+    const des  = monthData[mIdx].desired;
+
+    // This function handles pure X-move splits only (IVD splits handled separately).
+    if (getIVDChangeIndices(curr, des).length > 0) return [];
+
+    const { removed, added } = getXMovePairs(curr, des);
+    if (removed.length === 0) return [];
+
+    // Build the union of all X positions across current and desired.
+    // These are the only positions the intermediate state may use for X.
+    const currXPos = curr.reduce((a, v, i) => (v === 'X' ? [...a, i] : a), []);
+    const desXPos  = des.reduce((a, v, i)  => (v === 'X' ? [...a, i] : a), []);
+    const unionX   = [...new Set([...currXPos, ...desXPos])].sort((a, b) => a - b);
+    const xCount   = currXPos.length;
+    const omitCount = unionX.length - xCount; // how many union positions to leave out of the intermediate
+
+    if (omitCount <= 0) return []; // no flexibility; union = current X positions
+
+    // Estimate C(unionX.length, omitCount) to guard against combinatorial explosion.
+    function comb(n, k) {
+        if (k <= 0) return 1;
+        if (k >= n) return k === n ? 1 : 0;
+        k = Math.min(k, n - k);
+        let r = 1;
+        for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
+        return Math.round(r);
+    }
+    if (comb(unionX.length, omitCount) > 100000) return [];
+
+    // Build a candidate intermediate schedule from a chosen set of X positions.
+    function buildMid(midXSet) {
+        return curr.map((v, i) => {
+            if (v === 'X' && !midXSet.has(i)) return 'R';
+            if (v === 'R' && midXSet.has(i))  return 'X';
+            return v; // CI, CQ, A, IVD unchanged
+        });
+    }
+
+    const plans = [];
+    const omitted = [];
+
+    function enumerate(start) {
+        if (plans.length >= 3) return;
+        if (omitted.length === omitCount) {
+            const omittedSet = new Set(omitted);
+            const midXSet    = new Set(unionX.filter(i => !omittedSet.has(i)));
+            const mid        = buildMid(midXSet);
+
+            const a1 = analyzePCSPair(mIdx, curr, mid);
+            if (!a1.blocked && a1.valid) {
+                const a2 = analyzePCSPair(mIdx, mid, des);
+                if (!a2.blocked && a2.valid) {
+                    plans.push({ mid });
+                }
+            }
+            return;
+        }
+
+        const needed = omitCount - omitted.length;
+        for (let i = start; i <= unionX.length - needed; i++) {
+            omitted.push(unionX[i]);
+            enumerate(i + 1);
+            omitted.pop();
+        }
+    }
+
+    enumerate(0);
+    return plans;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    RENDER PCS PANEL
@@ -2866,6 +2996,31 @@ function buildPCSHTML(mIdx) {
         <div class="pcs-steps">${cards}</div>
         ${changesHTML}
         ${ivdPlacementsHTML}`;
+    }
+
+    // P11: Try splitting into two X-move PCS runs (handles P10 middle-block violations)
+    const twoStepXPlans = findTwoStepXMovePlans(mIdx);
+    if (twoStepXPlans.length > 0) {
+        const cards = twoStepXPlans.map((plan, idx) => {
+            const step1Desc = formatXMovePairs(mIdx, curr, plan.mid);
+            const step2Desc = formatXMovePairs(mIdx, plan.mid, des);
+            return `<div class="pcs-step">
+                <div class="pcs-step-num">${idx + 1}</div>
+                <div class="pcs-step-text">
+                    <div><b>Option ${idx + 1}</b></div>
+                    <div class="pcs-step-note">Run 1: ${step1Desc}</div>
+                    <div class="pcs-step-note">Run 2: ${step2Desc}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div class="pcs-status-bar legal">
+            <span class="pcs-status-icon">✓</span>
+            <span>Desired schedule is reachable in 2 PCS runs.</span>
+        </div>
+        <div class="pcs-steps-header">Two-Run PCS Options</div>
+        <div class="pcs-steps">${cards}</div>
+        ${changesHTML}`;
     }
 
     const violationsHTML = `<div class="pcs-violations">

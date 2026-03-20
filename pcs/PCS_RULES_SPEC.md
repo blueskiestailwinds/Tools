@@ -124,8 +124,26 @@ Pathfinding rules:
   - invalid examples:
     - March 2 is CI and March 3 is used as the start of the bid period.
 - Rule P9:
-  - IVDs can be placed on ANY R day. 
+  - IVDs can be placed on ANY R day.
     - valid example:
       - current: X-R-R-R-R-R-X
       - desired: X-R-R-IVD-R-R-X
-    Analyzer should return "Place IVD on {date of added IVD}" in the results. 
+    Analyzer should return "Place IVD on {date of added IVD}" in the results.
+- Rule P10: X days moved from a block must be contiguous and must include the block's first or last day (implements contract section 8.a).
+  - The "moved" X days from any single X-day block must be either:
+    1. The entire block
+    2. A contiguous prefix (starting at the block's first day)
+    3. A contiguous suffix (ending at the block's last day)
+  - fails when: X days removed from a block are non-contiguous
+  - fails when: X days removed from a block are contiguous but don't touch the first or last day of the block
+  - passes when: removed X days start at the block's first day
+  - passes when: removed X days end at the block's last day
+  - valid example: block [X-X-X-X], remove first 3 → [R-R-R-X]: prefix including first day ✓
+  - valid example: block [X-X-X-X], remove last 3 → [X-R-R-R]: suffix including last day ✓
+  - invalid example: block [X-X-X-X], remove middle 2 → [X-R-R-X]: touches neither first nor last ✗
+- Rule P11: If a direct X-day move is blocked by P10, the desired schedule may still be reachable via two separate PCS runs, each independently satisfying all rules (including P10).
+  - The app will identify and display valid two-run sequences when found.
+  - Each run is submitted as a separate PCS change request.
+  - valid two-run example: to move days from the middle of block [S..E]:
+    - Run 1: move suffix [A+1..E] to desired positions (valid: touches last day E of block)
+    - Run 2: move [A] — now the last day of the shortened block [S..A] — to its final position (valid: touches last day A)
