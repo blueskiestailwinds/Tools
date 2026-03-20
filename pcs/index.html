@@ -4582,7 +4582,7 @@
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const isCurrentBidPeriod = today >= m.start && today <= m.end;
-            const isD10Window = today.getDate() >= 11 && today.getDate() <= 20;
+            const isD10Window = today.getDate() >= 11 && today.getDate() <= 17;
             const hasXMove = removedIdx.length > 0 || addedIdx.length > 0;
             const d10CautionHTML = (isCurrentBidPeriod && isD10Window && hasXMove)
                 ? `<div class="pcs-status-bar warning">
