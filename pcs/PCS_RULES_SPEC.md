@@ -52,8 +52,15 @@ Display rules:
     - passes when: User selects CQ and then attempts to paint on the desired schedule and nothing changes.
     - passes when: User selects A and then attempts to paint on the desired schedule and nothing changes.
 - Rule D8:
-  -  If the analysis results in an error and that individual error contains dates in the same months, drop the month name on the second date.
+  - If the analysis results in an error and that individual error contains dates in the same months, drop the month name on the second date.
   - example: "March 2–March 3: 2 days on call is below the minimum on-call duration (4)" should be "March 2-3: 2 days on call is below the minimum on-call duration (4)."
+- Rule D9: Frozen-day mismatch blocks analysis entirely.
+  - The earliest movable day is D+2 (two calendar days from today). Days before that index are frozen.
+  - If any frozen day differs between current and desired, raise a blocked failure immediately — do not run any pathfinding or validation checks.
+  - Prevents analyzer from running
+  - fails when: desired differs from current on any day before D+2
+  - passes when: all days before D+2 are identical between current and desired
+  - UI message: "{date} cannot be changed — it is within the 2-day submission window."
 
 Pathfinding rules:
 
@@ -112,7 +119,7 @@ Pathfinding rules:
     - current month begins with [CI-CI-X-X-X]
     - desired month begins with [CI-CI-X-R-X...]. This does not touch the CI so it must comply with minWork.
   - valid example:
-    -  current month begins with [CI-CI-R-X-X...]
+    - current month begins with [CI-CI-R-X-X...]
     - desired month begins with [CI-CI-X-X-X...]
 - Rule P8: The first day of the bid period is always the start of the bid period. CI does not change that.
   - fails when: March 2 is the start of the bid period per function generateBidMonths(), but any other day is seen as the start of the month within these rules.
@@ -128,7 +135,7 @@ Pathfinding rules:
     - valid example:
       - current: X-R-R-R-R-R-X
       - desired: X-R-R-IVD-R-R-X
-    Analyzer should return "Place IVD on {date of added IVD}" in the results.
+        Analyzer should return "Place IVD on {date of added IVD}" in the results.
 - Rule P10: X days moved from a block must be contiguous and must include the block's first or last day (implements contract section 8.a).
   - The "moved" X days from any single X-day block must be either:
     1. The entire block
