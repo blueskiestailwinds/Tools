@@ -1372,7 +1372,15 @@
             cursor: pointer;
             color: var(--text-muted);
             border-bottom: 3px solid transparent;
+            text-align: center;
             text-transform: uppercase;
+        }
+
+        .m-tab-label {
+            display: block;
+            width: 100%;
+            text-align: center;
+            line-height: 1.05;
         }
 
         .m-tab.active-tab {
@@ -2376,10 +2384,14 @@
 
         <!-- Tab bar: Current / Desired / Analysis -->
         <div id="m-tab-bar">
-            <div class="m-tab active-tab" data-tab="current" onclick="switchMobileTab('current')">Current</div>
-            <div class="m-tab" data-tab="desired" onclick="switchMobileTab('desired')">Desired</div>
-            <div class="m-tab" data-tab="staffing" onclick="switchMobileTab('staffing')">Reserve Levels</div>
-            <div class="m-tab" data-tab="changes" onclick="switchMobileTab('changes')">Analysis</div>
+            <div class="m-tab active-tab" data-tab="current" onclick="switchMobileTab('current')"><span
+                    class="m-tab-label">Current</span></div>
+            <div class="m-tab" data-tab="desired" onclick="switchMobileTab('desired')"><span
+                    class="m-tab-label">Desired</span></div>
+            <div class="m-tab" data-tab="staffing" onclick="switchMobileTab('staffing')"><span
+                    class="m-tab-label">Reserve Levels</span></div>
+            <div class="m-tab" data-tab="changes" onclick="switchMobileTab('changes')"><span
+                    class="m-tab-label">Analysis</span></div>
         </div>
 
         <div id="m-scroll-viewport">
