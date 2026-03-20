@@ -2918,20 +2918,21 @@ function buildPCSHTML(mIdx) {
     const monName = m.name.split(' ')[0];
     const toCalDay = dIdx => { const d = new Date(m.start); d.setDate(m.start.getDate() + dIdx); return d.getDate(); };
 
-    const removed = [], added = [];
+    // Use day indices (not .getDate() numbers) so cross-month runs merge and format correctly.
+    const removedIdx = [], addedIdx = [];
     curr.forEach((code, i) => {
-        if (code === 'X' && des[i] === 'R') removed.push(toCalDay(i));
-        if (code === 'R' && des[i] === 'X') added.push(toCalDay(i));
+        if (code === 'X' && des[i] === 'R') removedIdx.push(i);
+        if (code === 'R' && des[i] === 'X') addedIdx.push(i);
     });
 
     let changesHTML = '';
-    if (removed.length === 0) {
+    if (removedIdx.length === 0) {
         changesHTML = `<div class="pcs-no-path">No changes from current schedule.</div>`;
     } else {
-        // Pair 1:1 chronologically, then merge runs where both source and dest advance together
+        // Pair 1:1 chronologically, then merge runs where both source and dest advance by 1 together
         const groups = [];
-        removed.forEach((r, i) => {
-            const t = added[i];
+        removedIdx.forEach((r, k) => {
+            const t = addedIdx[k];
             const last = groups[groups.length - 1];
             if (last && r === last.fromEnd + 1 && t === last.toEnd + 1) {
                 last.fromEnd = r; last.toEnd = t;
@@ -2939,9 +2940,8 @@ function buildPCSHTML(mIdx) {
                 groups.push({ fromStart: r, fromEnd: r, toStart: t, toEnd: t });
             }
         });
-        const fmt = (s, e) => s === e ? `${monName} ${s}` : `${monName} ${s}–${e}`;
         const steps = groups.map(g =>
-            `<div class="pcs-step"><div class="pcs-step-text">${fmt(g.fromStart, g.fromEnd)} → ${fmt(g.toStart, g.toEnd)}</div></div>`
+            `<div class="pcs-step"><div class="pcs-step-text">${calDateRange(mIdx, g.fromStart, g.fromEnd)} → ${calDateRange(mIdx, g.toStart, g.toEnd)}</div></div>`
         ).join('');
         changesHTML = `
             <div class="pcs-steps-header">X Day Moves</div>
