@@ -899,6 +899,11 @@
                 padding: 7px 10px;
             }
 
+            .pcs-advisory {
+                font-size: 0.78rem;
+                padding: 7px 10px;
+            }
+
             .pcs-steps-header {
                 margin-bottom: 8px;
             }
@@ -1798,6 +1803,15 @@
             border-radius: 6px;
             background: #2d1414;
             border: 1px solid #7f1d1d;
+        }
+
+        .pcs-advisory {
+            font-size: 0.82rem;
+            color: #fde047;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #2a2000;
+            border: 1px solid #854d0e;
         }
 
         .pcs-steps-header {
@@ -4113,6 +4127,7 @@
             const { minWork, maxXblocks } = getSettings();
             const lastIdx = curr.length - 1;
             const violations = [];
+            const advisories = [];
             const p9AddedIVDOnR = new Set();
             const fmi = BID_MONTHS[mIdx].firstMovableIdx;
 
@@ -4151,15 +4166,18 @@
                 }
             }
 
-            // P12: R→X transitions are forbidden on staffing-blocked dates
+            // P12: R→X transitions on staffing-blocked dates (advisory only — stops further analysis)
             const staffing = monthData[mIdx].staffing || [];
             for (let i = 0; i <= lastIdx; i++) {
                 if (curr[i] === 'R' && des[i] === 'X' && staffing[i] === false) {
-                    violations.push({
+                    advisories.push({
                         rule: 'P12',
-                        message: `${calDate(mIdx, i)}: Res Avail < Res Req... Moving this X day won't work.`,
+                        message: `${calDate(mIdx, i)}: Res Avail < Res Req... Moving this X day probably won't work. To continue, remove black day(s) and try again.`,
                     });
                 }
+            }
+            if (advisories.length > 0) {
+                return { blocked: false, violations: [], advisories, valid: false, summary: null };
             }
 
             // P2: X in desired can only land on days that were R in current (not A, CI, or CQ)
@@ -4184,7 +4202,8 @@
                 }
             }
 
-            // P10: X days moved from a block must be a contiguous range touching the first or last day
+            // P10: X days moved from a block must touch the first day, last day, or both ends.
+            // Allows one contiguous group (touching start or end) or two groups (one at each end).
             // (implements contract section 8.a)
             const currXBlocks = getXBlocks(curr);
             for (const block of currXBlocks) {
@@ -4194,21 +4213,26 @@
                 }
                 if (removedFromBlock.length === 0) continue;
 
-                let contiguous = true;
-                for (let k = 1; k < removedFromBlock.length; k++) {
-                    if (removedFromBlock[k] !== removedFromBlock[k - 1] + 1) { contiguous = false; break; }
-                }
-                if (!contiguous) {
-                    violations.push({
-                        rule: 'P10',
-                        message: `${calDateRange(mIdx, block.start, block.end)}: X-day moves from a block must be contiguous`,
-                    });
-                    continue;
+                // Split removed days into contiguous groups
+                const groups = [];
+                let gStart = 0;
+                for (let k = 1; k <= removedFromBlock.length; k++) {
+                    if (k === removedFromBlock.length || removedFromBlock[k] !== removedFromBlock[k - 1] + 1) {
+                        groups.push(removedFromBlock.slice(gStart, k));
+                        gStart = k;
+                    }
                 }
 
-                const removedFirst = removedFromBlock[0];
-                const removedLast = removedFromBlock[removedFromBlock.length - 1];
-                if (removedFirst !== block.start && removedLast !== block.end) {
+                let p10Valid = false;
+                if (groups.length === 1) {
+                    const g = groups[0];
+                    if (g[0] === block.start || g[g.length - 1] === block.end) p10Valid = true;
+                } else if (groups.length === 2) {
+                    const g1 = groups[0], g2 = groups[1];
+                    if (g1[0] === block.start && g2[g2.length - 1] === block.end) p10Valid = true;
+                }
+
+                if (!p10Valid) {
                     violations.push({
                         rule: 'P10',
                         message: `${calDateRange(mIdx, block.start, block.end)}: Can only move the first day(s), last day(s), or the entire X-day block — not days from the middle`,
@@ -4298,7 +4322,8 @@
             return {
                 blocked: false,
                 violations,
-                valid: violations.length === 0,
+                advisories,
+                valid: violations.length === 0 && advisories.length === 0,
                 summary: { adds, removes, xBlockCount: desXBlocks.length },
             };
         }
@@ -4626,11 +4651,16 @@
              ${ivdChangedDays.map(d => `<div class="pcs-step"><div class="pcs-step-text">Place IVD on ${monName} ${d}</div></div>`).join('')}
            </div>`;
 
+            const advisoriesHTML = result.advisories && result.advisories.length > 0
+                ? `<div class="pcs-violations">${result.advisories.map(a => `<div class="pcs-advisory">${escapeHTML(a.message)}</div>`).join('')}</div>`
+                : '';
+
             if (result.valid) {
                 return `<div class="pcs-status-bar legal">
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is valid</span>
         </div>
+        ${advisoriesHTML}
         ${d10CautionHTML}
         ${changesHTML}
         ${ivdPlacementsHTML}`;
@@ -4659,6 +4689,7 @@
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is reachable in 2 PCS runs.</span>
         </div>
+        ${advisoriesHTML}
         ${d10CautionHTML}
         <div class="pcs-steps-header">Two-Run PCS Options</div>
         <div class="pcs-steps">${cards}</div>
@@ -4685,19 +4716,21 @@
             <span class="pcs-status-icon">✓</span>
             <span>Desired schedule is reachable in 2 PCS runs.</span>
         </div>
+        ${advisoriesHTML}
         ${d10CautionHTML}
         <div class="pcs-steps-header">Two-Run PCS Options</div>
         <div class="pcs-steps">${cards}</div>`;
             }
 
-            const violationsHTML = `<div class="pcs-violations">
-        ${result.violations.map(v => `<div class="pcs-violation">${escapeHTML(v.message)}</div>`).join('')}
-    </div>`;
+            const violationsHTML = result.violations.length > 0
+                ? `<div class="pcs-violations">${result.violations.map(v => `<div class="pcs-violation">${escapeHTML(v.message)}</div>`).join('')}</div>`
+                : '';
+            const statusBar = result.violations.length > 0
+                ? `<div class="pcs-status-bar illegal"><span class="pcs-status-icon">✗</span><span>${result.violations.length} violation(s) found</span></div>`
+                : '';
 
-            return `<div class="pcs-status-bar illegal">
-        <span class="pcs-status-icon">✗</span>
-        <span>${result.violations.length} violation(s) found</span>
-    </div>
+            return `${statusBar}
+    ${advisoriesHTML}
     ${violationsHTML}
     ${ivdPlacementsHTML}`;
         }
