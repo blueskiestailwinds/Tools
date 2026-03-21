@@ -44,6 +44,20 @@
             align-items: center;
             justify-content: center;
             padding: 2rem 1rem;
+            position: relative;
+            isolation: isolate;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url('350.jpg') center / cover no-repeat;
+            opacity: 0.10;
+            filter: blur(3px) grayscale(40%);
+            z-index: -1;
+            transform: scale(1.04);
+            /* hide blur edges */
         }
 
         h1 {
